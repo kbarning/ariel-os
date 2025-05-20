@@ -4347,6 +4347,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "playground"
+version = "0.0.0"
+dependencies = [
+ "ariel-os",
+ "ariel-os-boards",
+]
+
+[[package]]
 name = "poly1305"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
