@@ -1,0 +1,6 @@
+apps:
+  - name: playground
+    context:
+      - st-nucleo-l552ze-q
+    selects:
+      - sw/threading
