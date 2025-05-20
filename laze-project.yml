@@ -183,11 +183,6 @@ contexts:
         cmd:
           - rust-objdump -S ${out} $@
 
-      info-boards:
-        build: false
-        cmd:
-          - echo ${builder}
-
       vscode-config:
         help: Generate a VSCode configuration for selected board (select a board with -b)
         build: false
@@ -631,6 +626,18 @@ contexts:
       PROBE_RS_CHIP: STM32WBA55CG
       RUSTFLAGS:
         - --cfg capability=\"hw/stm32-rng\"
+
+  - name: stm32l552ze
+    parent: stm32
+    selects:
+      - cortex-m33f
+    provides:
+      - has_hwrng
+    env:
+      PROBE_RS_CHIP: STM32L552ZE
+      RUSTFLAGS:
+        - --cfg capability=\"hw/stm32-rng\"
+
 
   - name: stm32wle5jc
     parent: stm32
@@ -1780,3 +1787,4 @@ subdirs:
   - examples
   - src
   - tests
+  - playground

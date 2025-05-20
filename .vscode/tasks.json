@@ -1,0 +1,22 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build Playground",
+            "type": "shell",
+            "command": "laze",
+            "args": [
+                "-C",
+                "playground",
+                "build",
+                "-b",
+                "st-nucleo-l552ze-q"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        }
+    ]
+}
