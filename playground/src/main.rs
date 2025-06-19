@@ -1,18 +1,20 @@
 #![no_main]
 #![no_std]
+#![allow(unconditional_panic)]
 
-mod pins;
+use ariel_os::debug::{ExitCode, exit, log::*};
 
-use ariel_os::{
-    gpio::{Level, Output},
-    time::Timer,
-};
+#[ariel_os::thread(autostart)]
+fn main() {
+    const MPU_TYPE_ADDR: *const u32 = 0xE000ED90 as *const u32;
+    const MPU_CTRL_ADDR: *const u32 = 0xE000ED94 as *const u32;
+    unsafe {
+        let mpu_type = core::ptr::read(MPU_TYPE_ADDR);
+        let mpu_ctrl = core::ptr::read(MPU_CTRL_ADDR);
 
-#[ariel_os::task(autostart, peripherals)]
-async fn blinky(peripherals: pins::LedPeripherals) {
-    let mut led = Output::new(peripherals.led, Level::Low);
-    loop {
-        led.toggle();
-        Timer::after_millis(20).await;
+        info!("MAX MPU REGS: {}", mpu_type >> 8);
+        info!("MAX MPU CTRL: {mpu_ctrl:b}");
     }
+
+    exit(ExitCode::SUCCESS);
 }
