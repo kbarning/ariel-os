@@ -176,15 +176,12 @@ fn startup() -> ! {
         f();
     }
 
-    #[cfg(feature = "threading")]
+    #[cfg(feature = "mpu")]
     {
-        // SAFETY: this function must not be called more than once
-        unsafe {
-            threading::start();
-        }
+        mpu::enable();
     }
 
-    #[cfg(feature = "mpu")]
+    #[cfg(feature = "threading")]
     {
         // SAFETY: this function must not be called more than once
         unsafe {

@@ -3968,7 +3968,7 @@ name = "nrf-mpsl"
 version = "0.1.0"
 source = "git+https://github.com/ariel-os/nrf-sdc.git?rev=8ce4780b691ec6850b05a0382cef395846b67e02#8ce4780b691ec6850b05a0382cef395846b67e02"
 dependencies = [
- "cortex-m",
+ "cortex-m 0.7.7",
  "defmt 0.3.100",
  "embassy-nrf",
  "embassy-sync 0.6.2",
@@ -4276,7 +4276,7 @@ dependencies = [
  "phf_shared 0.11.3",
  "proc-macro2",
  "quote",
- "syn 2.0.96",
+ "syn 2.0.104",
 ]
 
 [[package]]
