@@ -4,4 +4,6 @@ apps:
       - st-nucleo-l552ze-q
     selects:
       - sw/threading
+      - sw/mpu
       - log
+      - sw/mpu

@@ -144,6 +144,7 @@ jobs:
             -p ariel-os-storage
             -p ariel-os-threads
             -p ariel-os-utils
+            -p ariel-os-mpu
             --
             --deny warnings
 
