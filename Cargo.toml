@@ -58,6 +58,7 @@ cortex-m = { version = "0.7", default-features = false, features = [
 ] }
 cortex-m-rt = { version = "0.7.5" }
 cortex-m-semihosting = { version = "0.5" }
+cortex-mpu = "0.4.0"
 critical-section = { version = "1.2.0" }
 featurecomb = "0.1.3"
 # Disabling default features may reduce the code size by not providing atomics
