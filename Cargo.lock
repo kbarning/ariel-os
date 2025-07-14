@@ -160,6 +160,7 @@ dependencies = [
  "ariel-os-hal",
  "ariel-os-identity",
  "ariel-os-macros",
+ "ariel-os-mpu",
  "ariel-os-power",
  "ariel-os-random",
  "ariel-os-rt",
@@ -497,6 +498,7 @@ version = "0.2.0"
 dependencies = [
  "ariel-os-alloc",
  "ariel-os-debug",
+ "ariel-os-mpu",
  "ariel-os-threads",
  "ariel-os-utils",
  "cfg-if",
@@ -4333,6 +4335,9 @@ version = "0.0.0"
 dependencies = [
  "ariel-os",
  "ariel-os-boards",
+ "cortex-m",
+ "cortex-m-rt",
+ "cortex-m-semihosting",
 ]
 
 [[package]]

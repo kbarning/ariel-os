@@ -39,6 +39,7 @@ ariel-os-sensors = { workspace = true, optional = true }
 ariel-os-storage = { workspace = true, optional = true }
 ariel-os-threads = { path = "../ariel-os-threads", optional = true }
 ariel-os-utils = { workspace = true }
+ariel-os-mpu = { path = "../ariel-os-mpu", optional = true }
 static_cell = { workspace = true }
 
 [features]
@@ -216,3 +217,6 @@ _test = [
   "uart",
   "ariel-os-rt/_test",
 ]
+
+# Enables hardware memory protection unit
+mpu = ["ariel-os-mpu"]
