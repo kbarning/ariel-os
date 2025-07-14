@@ -10,3 +10,9 @@ workspace = true
 [dependencies]
 ariel-os = { path = "../src/ariel-os", features = ["time"] }
 ariel-os-boards = { path = "../src/ariel-os-boards" }
+
+[target.'cfg(context = "cortex-m")'.dependencies]
+# cortex-m specifics
+cortex-m.workspace = true
+cortex-m-rt.workspace = true
+cortex-m-semihosting.workspace = true

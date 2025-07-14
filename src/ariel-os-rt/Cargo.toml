@@ -14,6 +14,7 @@ ariel-os-alloc = { workspace = true, optional = true }
 ariel-os-debug.workspace = true
 ariel-os-threads = { path = "../ariel-os-threads", optional = true }
 ariel-os-utils = { workspace = true }
+ariel-os-mpu = { path = "../ariel-os-mpu", optional = true }
 
 [build-dependencies]
 ld-memory = { workspace = true, features = ["build-rs"], optional = true }

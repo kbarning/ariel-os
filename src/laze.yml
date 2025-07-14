@@ -11,4 +11,5 @@ subdirs:
   - ariel-os-runqueue
   - ariel-os-stm32
   - ariel-os-threads
+  - ariel-os-mpu
   - lib

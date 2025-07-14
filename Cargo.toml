@@ -51,6 +51,7 @@ edition = "2024"
 repository = "https://github.com/ariel-os/ariel-os"
 
 [workspace.dependencies]
+bitflags = { version = "1.0.0" }
 cfg-if = { version = "1.0.0" }
 cortex-m = { version = "0.7", default-features = false, features = [
   "inline-asm",
@@ -127,6 +128,7 @@ ariel-os-stm32 = { path = "src/ariel-os-stm32" }
 ariel-os-storage = { path = "src/ariel-os-storage" }
 ariel-os-threads = { path = "src/ariel-os-threads" }
 ariel-os-utils = { path = "src/ariel-os-utils", default-features = false }
+ariel-os-mpu = { path = "src/ariel-os-mpu"}
 
 const_panic = { version = "0.2.8", default-features = false }
 const-str = "0.6.0"

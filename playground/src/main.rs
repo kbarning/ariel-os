@@ -3,18 +3,36 @@
 #![allow(unconditional_panic)]
 
 use ariel_os::debug::{ExitCode, exit, log::*};
+use ariel_os::thread::*;
 
 #[ariel_os::thread(autostart)]
-fn main() {
-    const MPU_TYPE_ADDR: *const u32 = 0xE000ED90 as *const u32;
-    const MPU_CTRL_ADDR: *const u32 = 0xE000ED94 as *const u32;
-    unsafe {
-        let mpu_type = core::ptr::read(MPU_TYPE_ADDR);
-        let mpu_ctrl = core::ptr::read(MPU_CTRL_ADDR);
+fn thread_a() {
+    info!("Thread A Running");
 
-        info!("MAX MPU REGS: {}", mpu_type >> 8);
-        info!("MAX MPU CTRL: {mpu_ctrl:b}");
+    for i in 0..10 {
+        info!("Thread A Looping");
     }
 
-    exit(ExitCode::SUCCESS);
+    yield_same();
+
+    for i in 0..10 {
+        info!("Thread A Looping");
+    }
+
+    yield_same();
+}
+
+#[ariel_os::thread(autostart)]
+fn thread_b() {
+    info!("Thread B Running");
+
+    for i in 0..10 {
+        info!("Thread B Looping");
+    }
+
+    yield_same();
+
+    for i in 0..10 {
+        info!("Thread B Looping");
+    }
 }

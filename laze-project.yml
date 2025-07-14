@@ -1112,6 +1112,12 @@ modules:
         FEATURES:
           - ariel-os/threading
 
+  - name: sw/mpu
+    env:
+      global:
+        FEATURES:
+          - ariel-os/mpu
+
   - name: wifi-cyw43
     selects:
       - has_wifi_cyw43
