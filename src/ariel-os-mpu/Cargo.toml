@@ -19,3 +19,4 @@ ariel-os-utils = { workspace = true }
 
 [target.'cfg(context = "cortex-m")'.dependencies]
 cortex-m = { workspace = true }
+cortex-mpu = { workspace = true }

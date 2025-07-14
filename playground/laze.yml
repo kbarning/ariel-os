@@ -6,4 +6,3 @@ apps:
       - sw/threading
       - sw/mpu
       - log
-      - sw/mpu
