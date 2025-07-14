@@ -10,7 +10,8 @@
                 "playground",
                 "build",
                 "-b",
-                "st-nucleo-l552ze-q"
+                "st-nucleo-l552ze-q",
+                "-DPROFILE=dev"
             ],
             "group": {
                 "kind": "build",

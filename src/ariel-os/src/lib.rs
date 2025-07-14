@@ -37,6 +37,9 @@ pub use ariel_os_debug as debug;
 pub use ariel_os_hal::api::*;
 #[doc(inline)]
 pub use ariel_os_identity as identity;
+#[cfg(feature = "mpu")]
+#[doc(inline)]
+pub use ariel_os_mpu as mpu;
 #[doc(inline)]
 pub use ariel_os_power as power;
 #[cfg(feature = "random")]

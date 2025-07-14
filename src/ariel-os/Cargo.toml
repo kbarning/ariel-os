@@ -219,4 +219,4 @@ _test = [
 ]
 
 # Enables hardware memory protection unit
-mpu = ["ariel-os-mpu"]
+mpu = ["dep:ariel-os-mpu", "ariel-os-rt/mpu"]

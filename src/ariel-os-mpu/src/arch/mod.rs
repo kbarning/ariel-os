@@ -1,14 +1,14 @@
 bitflags::bitflags! {
     pub struct MemoryAccess : u8 {
-        const Readable = 0b1 << 0;
-        const Writeable = 0b1 << 1;
-        const Executable = 0b1 << 2;
-        const Cacheable = 0b1 << 3;
+        const READABLE = 0b1 << 0;
+        const WRITEABLE = 0b1 << 1;
+        const EXECUTABLE = 0b1 << 2;
+        const CACHEABLE = 0b1 << 3;
     }
 }
 
 pub trait Mpu {
-    fn supported_regions() -> usize; // TODO should this beeing fetched from the processor at runtime?
+    const N_REGIONS: usize; // Defines the number of regions that the MPU supports
     fn enable();
     fn disable();
     // TODO should this function return an unique object that can be used to unprotect/change a region later on?
