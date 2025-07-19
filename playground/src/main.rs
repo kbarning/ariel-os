@@ -9,7 +9,7 @@ use cortex_m::register::msp;
 #[ariel_os::thread(autostart)]
 fn thread_a() {
     let stack_begin = msp::read();
-    println!("Stack begin of tread a at: {:x}", stack_begin);
+    info!("Stack begin of tread a at: {:x}", stack_begin);
     info!("Thread A Running");
 
     for _ in 0..10 {
