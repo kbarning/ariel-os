@@ -1,3 +1,5 @@
+use core::ops::Range;
+
 bitflags::bitflags! {
     pub struct MemoryAccess : u8 {
         const READABLE = 0b1 << 0;
@@ -9,8 +11,14 @@ bitflags::bitflags! {
 
 pub trait Mpu {
     const N_REGIONS: usize; // Defines the number of regions that the MPU supports
+
+    fn init();
     fn enable();
     fn disable();
+
+    // Invoked on every context switch. Removes the old threads executable data and stack and protects the new one
+    fn context_switch(exec_addr_range: Range<u32>, stack_addr: Range<u32>);
+
     // TODO should this function return an unique object that can be used to unprotect/change a region later on?
     // Also should this keep track that the number of supported region is not exceeded?
     fn protect_region(range: core::ops::Range<usize>, access: MemoryAccess);
