@@ -1,7 +1,11 @@
 use crate::Mpu;
 use ariel_os_debug::println;
 use core::{marker::PhantomData, ops::Range};
-use cortex_m::{self as _, Peripherals, interrupt::CriticalSection, peripheral};
+use cortex_m::{
+    self as _, Peripherals,
+    interrupt::{CriticalSection, disable},
+    peripheral,
+};
 use cortex_mpu;
 
 use crate::arch::MemoryAccess;
@@ -15,6 +19,7 @@ impl Mpu for Cpu {
     const N_REGIONS: usize = 8; // ARM v8m supports 8 regions
 
     fn init() {
+        Self::disable();
         // Protect the program data and stack of the OS itself
         let flash_begin = 0x08000000; // FIXME hardcoded for stm32 at the moment
         let flash_end = flash_begin + 512 * 1024; // 512k length according to memory.x
