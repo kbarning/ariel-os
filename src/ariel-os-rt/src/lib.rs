@@ -9,9 +9,6 @@ pub mod stack;
 #[cfg(feature = "threading")]
 mod threading;
 
-#[cfg(feature = "mpu")]
-mod mpu;
-
 #[cfg(all(feature = "single-core", feature = "multi-core"))]
 compile_error!(
     "feature \"single-core\" and feature \"multi-core\" cannot be enabled at the same time"
@@ -178,7 +175,10 @@ fn startup() -> ! {
 
     #[cfg(feature = "mpu")]
     {
-        mpu::enable();
+        // SAFETY: this function must not be called more than once (FIXME correct?)
+        unsafe {
+            ariel_os_mpu::init_mpu();
+        }
     }
 
     #[cfg(feature = "threading")]

@@ -18,6 +18,7 @@ paste.workspace = true
 ariel-os-debug.workspace = true
 ariel-os-runqueue.workspace = true
 ariel-os-utils.workspace = true
+ariel-os-mpu = { path = "../ariel-os-mpu", optional = true }
 portable-atomic.workspace = true
 static_cell.workspace = true
 
@@ -66,5 +67,6 @@ multi-core = [
 ]
 infini-core = []
 core-affinity = ["multi-core"]
+mpu = ["dep:ariel-os-mpu"]
 
 _test = ["single-core"]

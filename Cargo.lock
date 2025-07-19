@@ -564,6 +564,7 @@ name = "ariel-os-threads"
 version = "0.2.0"
 dependencies = [
  "ariel-os-debug",
+ "ariel-os-mpu",
  "ariel-os-runqueue",
  "ariel-os-utils",
  "atomic-wait",

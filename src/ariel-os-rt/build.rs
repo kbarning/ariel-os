@@ -48,9 +48,9 @@ fn main() {
     #[cfg(feature = "memory-x")]
     write_memoryx();
 
-    println!("cargo:rerun-if-changed=linkme.x");
-    println!("cargo:rerun-if-changed=eheap.x");
-    println!("cargo:rerun-if-changed=keep-stack-sizes.x");
+    //println!("cargo:rerun-if-changed=linkme.x");
+    //println!("cargo:rerun-if-changed=eheap.x");
+    //println!("cargo:rerun-if-changed=keep-stack-sizes.x");
 
     println!("cargo:rustc-link-search={}", out.display());
 }
@@ -61,6 +61,8 @@ fn main() {
 /// Panics if called outside of a known laze context.
 #[cfg(feature = "memory-x")]
 fn write_memoryx() {
+    print!("cargo::warning=MEMORY X USED");
+
     use ld_memory::{Memory, MemorySection};
     let (ram, flash) = if context("nrf51822-xxaa") {
         (16, 256)

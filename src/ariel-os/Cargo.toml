@@ -199,4 +199,4 @@ executor-none = ["ariel-os-embassy/executor-none"]
 _test = ["i2c", "no-boards", "spi", "external-interrupts", "ariel-os-rt/_test"]
 
 # Enables hardware memory protection unit
-mpu = ["dep:ariel-os-mpu", "ariel-os-rt/mpu"]
+mpu = ["dep:ariel-os-mpu", "ariel-os-rt/mpu", "ariel-os-threads/mpu"]

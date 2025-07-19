@@ -46,8 +46,8 @@ cortex-m = { workspace = true, features = ["critical-section-single-core"] }
 
 [features]
 alloc = ["dep:ariel-os-alloc"]
-threading = ["dep:ariel-os-threads"]
 mpu = ["dep:ariel-os-mpu"]
+threading = ["dep:ariel-os-threads"]
 
 debug-console = ["ariel-os-debug/debug-console"]
 executor-single-thread = []
