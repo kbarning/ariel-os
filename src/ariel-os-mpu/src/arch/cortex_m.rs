@@ -6,7 +6,6 @@ use cortex_m::{
     interrupt::{CriticalSection, disable},
     peripheral,
 };
-use cortex_mpu;
 
 use crate::arch::MemoryAccess;
 
