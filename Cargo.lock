@@ -70,15 +70,6 @@ dependencies = [
 
 [[package]]
 name = "aligned"
-version = "0.3.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3a785a543aea40f5e4e2e93bb2655d31bc21bb391fff65697150973e383f16bb"
-dependencies = [
- "as-slice 0.1.5",
-]
-
-[[package]]
-name = "aligned"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "377e4c0ba83e4431b10df45c1d4666f178ea9c552cac93e60c3a88bf32785923"
@@ -198,7 +189,7 @@ name = "ariel-os-bench"
 version = "0.2.0"
 dependencies = [
  "cfg-if",
- "cortex-m 0.7.7",
+ "cortex-m",
  "defmt 1.0.1",
  "esp-hal",
 ]
@@ -409,6 +400,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "ariel-os-mpu"
+version = "0.1.0"
+dependencies = [
+ "ariel-os-alloc",
+ "ariel-os-debug",
+ "ariel-os-utils",
+ "bitflags 1.3.2",
+ "cfg-if",
+ "cortex-m",
+ "critical-section",
+ "linkme",
+]
+
+[[package]]
 name = "ariel-os-native"
 version = "0.2.0"
 dependencies = [
@@ -453,7 +458,7 @@ name = "ariel-os-power"
 version = "0.2.0"
 dependencies = [
  "cfg-if",
- "cortex-m 0.7.7",
+ "cortex-m",
  "esp-hal",
 ]
 
@@ -498,7 +503,7 @@ dependencies = [
  "ariel-os-threads",
  "ariel-os-utils",
  "cfg-if",
- "cortex-m 0.7.7",
+ "cortex-m",
  "cortex-m-rt",
  "embassy-rp",
  "esp-hal",
@@ -548,7 +553,7 @@ version = "0.2.0"
 dependencies = [
  "ariel-os-debug",
  "ariel-os-hal",
- "arrayvec 0.7.6",
+ "arrayvec",
  "cfg-if",
  "embassy-sync 0.6.2",
  "embassy-time",
@@ -569,7 +574,7 @@ dependencies = [
  "ariel-os-utils",
  "atomic-wait",
  "cfg-if",
- "cortex-m 0.7.7",
+ "cortex-m",
  "cortex-m-rt",
  "cortex-m-semihosting",
  "critical-section",
@@ -592,15 +597,6 @@ dependencies = [
  "const-str",
  "const_panic",
  "konst",
-]
-
-[[package]]
-name = "arrayvec"
-version = "0.4.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cd9fd44efafa8690358b7408d253adf110036b88f55672a933f01d616ad9b1b9"
-dependencies = [
- "nodrop",
 ]
 
 [[package]]
@@ -840,7 +836,7 @@ version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "44c051592f59fe68053524b4c4935249b806f72c1f544cfb7abe4f57c3be258e"
 dependencies = [
- "aligned 0.4.2",
+ "aligned",
 ]
 
 [[package]]
@@ -1273,7 +1269,7 @@ name = "coapcore"
 version = "0.1.0"
 dependencies = [
  "aes",
- "arrayvec 0.7.6",
+ "arrayvec",
  "ccm",
  "coap-handler",
  "coap-message",
@@ -1354,19 +1350,6 @@ checksum = "773648b94d0e5d620f64f280777445740e61fe701025087ec8b57f45c791888b"
 
 [[package]]
 name = "cortex-m"
-version = "0.6.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9075300b07c6a56263b9b582c214d0ff037b00d45ec9fde1cc711490c56f1bb9"
-dependencies = [
- "aligned 0.3.5",
- "bare-metal",
- "bitfield 0.13.2",
- "cortex-m 0.7.7",
- "volatile-register",
-]
-
-[[package]]
-name = "cortex-m"
 version = "0.7.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ec610d8f49840a5b376c69663b6369e71f4b34484b9b2eb29fb918d92516cb9"
@@ -1404,17 +1387,7 @@ version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c23234600452033cc77e4b761e740e02d2c4168e11dbf36ab14a0f58973592b0"
 dependencies = [
- "cortex-m 0.7.7",
-]
-
-[[package]]
-name = "cortex-mpu"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3b8924ba6dfcbc23d5501840ae55b5ba221f6bb16c7002400b7e9f097d61b090"
-dependencies = [
- "arrayvec 0.4.12",
- "cortex-m 0.6.7",
+ "cortex-m",
 ]
 
 [[package]]
@@ -1505,7 +1478,7 @@ version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2c998ad980bbdc3947db4951bc763d14738ab873e20b5e2d87bb683011d7f9e8"
 dependencies = [
- "cortex-m 0.7.7",
+ "cortex-m",
  "cortex-m-rt",
  "embassy-futures",
  "embassy-net-driver-channel",
@@ -1787,7 +1760,7 @@ name = "embassy-executor"
 version = "0.7.0"
 source = "git+https://github.com/ariel-os/embassy?branch=embassy-executor-v0.7.0%2B04.04.25%2Bariel-os#b552a87578479a92b3027bd208c712445499589c"
 dependencies = [
- "cortex-m 0.7.7",
+ "cortex-m",
  "critical-section",
  "document-features",
  "embassy-executor-macros",
@@ -1818,7 +1791,7 @@ name = "embassy-hal-internal"
 version = "0.2.0"
 source = "git+https://github.com/ariel-os/embassy?branch=embassy-hal-internal-v0.2.0%2Bariel-os#ed7d22c1881b64f9bdd2e69a5777b002279033a6"
 dependencies = [
- "cortex-m 0.7.7",
+ "cortex-m",
  "critical-section",
  "defmt 0.3.100",
  "num-traits",
@@ -1868,7 +1841,7 @@ source = "git+https://github.com/ariel-os/embassy?branch=embassy-nrf-v0.3.1%2Bar
 dependencies = [
  "bitflags 2.8.0",
  "cfg-if",
- "cortex-m 0.7.7",
+ "cortex-m",
  "cortex-m-rt",
  "critical-section",
  "defmt 0.3.100",
@@ -1900,7 +1873,7 @@ source = "git+https://github.com/ariel-os/embassy?branch=embassy-rp-v0.4.0%2Bari
 dependencies = [
  "atomic-polyfill",
  "cfg-if",
- "cortex-m 0.7.7",
+ "cortex-m",
  "cortex-m-rt",
  "critical-section",
  "defmt 0.3.100",
@@ -1938,12 +1911,12 @@ name = "embassy-stm32"
 version = "0.2.0"
 source = "git+https://github.com/ariel-os/embassy?branch=embassy-stm32-v0.2.0%2Bariel-os#90c8da09646d5fd97b7d416720688dcd3da1ecfb"
 dependencies = [
- "aligned 0.4.2",
+ "aligned",
  "bit_field",
  "bitflags 2.8.0",
  "block-device-driver",
  "cfg-if",
- "cortex-m 0.7.7",
+ "cortex-m",
  "cortex-m-rt",
  "critical-section",
  "defmt 0.3.100",
@@ -2729,7 +2702,7 @@ version = "0.0.0"
 dependencies = [
  "ariel-os",
  "ariel-os-boards",
- "arrayvec 0.7.6",
+ "arrayvec",
  "heapless 0.8.0",
  "serde",
 ]
@@ -3943,12 +3916,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "650eef8c711430f1a879fdd01d4745a7deea475becfb90269c06775983bbf086"
 
 [[package]]
-name = "nodrop"
-version = "0.1.14"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "72ef4a56884ca558e5ddb05a1d1e7e1bfd9a68d9ed024c21704cc98872dae1bb"
-
-[[package]]
 name = "nom"
 version = "7.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3969,7 +3936,7 @@ name = "nrf-mpsl"
 version = "0.1.0"
 source = "git+https://github.com/ariel-os/nrf-sdc.git?rev=8ce4780b691ec6850b05a0382cef395846b67e02#8ce4780b691ec6850b05a0382cef395846b67e02"
 dependencies = [
- "cortex-m 0.7.7",
+ "cortex-m",
  "defmt 0.3.100",
  "embassy-nrf",
  "embassy-sync 0.6.2",
@@ -3994,7 +3961,7 @@ version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d334027d6703534f2a80de0794ae435c0e029358d28278533d3935e69b221b01"
 dependencies = [
- "cortex-m 0.7.7",
+ "cortex-m",
  "cortex-m-rt",
 ]
 
@@ -4171,7 +4138,7 @@ version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ee8a3e1233d9073d76a870223512ce4eeea43c067a94a445c13bd6d792d7b1ab"
 dependencies = [
- "cortex-m 0.7.7",
+ "cortex-m",
  "cortex-m-semihosting",
 ]
 
@@ -4364,7 +4331,7 @@ version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "61d90fddc3d67f21bbf93683bc461b05d6a29c708caf3ffb79947d7ff7095406"
 dependencies = [
- "arrayvec 0.7.6",
+ "arrayvec",
  "num_enum 0.7.3",
  "paste",
 ]
@@ -4402,7 +4369,7 @@ version = "0.0.0"
 dependencies = [
  "ariel-os",
  "ariel-os-boards",
- "cortex-m 0.7.7",
+ "cortex-m",
  "cortex-m-rt",
  "cortex-m-semihosting",
 ]
@@ -4830,7 +4797,7 @@ version = "7.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8af65855c40b2c35079514c5489abffc0429347fef25d8467ff98ad84b4322d3"
 dependencies = [
- "cortex-m 0.7.7",
+ "cortex-m",
  "cortex-m-rt",
 ]
 
@@ -4988,7 +4955,7 @@ version = "4.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8d8e933f534642c25b7341338c10e2250187c8cd198c3957ef6894265eefda86"
 dependencies = [
- "arrayvec 0.7.6",
+ "arrayvec",
  "embedded-storage-async",
 ]
 
@@ -5250,7 +5217,7 @@ version = "16.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dc520f60f6653a32479a95b9180b33908f0cbbdf106609465ee7dea98f4f5b37"
 dependencies = [
- "cortex-m 0.7.7",
+ "cortex-m",
  "cortex-m-rt",
 ]
 
