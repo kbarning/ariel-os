@@ -12,8 +12,6 @@ workspace = true
 bitflags.workspace = true
 cfg-if.workspace = true
 critical-section.workspace = true
-linkme.workspace = true
-ariel-os-alloc = { workspace = true, optional = true }
 ariel-os-debug.workspace = true
 ariel-os-utils = { workspace = true }
 

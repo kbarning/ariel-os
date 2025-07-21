@@ -11,7 +11,7 @@ pub unsafe fn init_mpu() {
     <Cpu as Mpu>::init();
 }
 
-pub fn context_switch(exec_addr_range: Range<u32>, stack_addr: Range<u32>) {
+pub fn context_switch(exec_addr_range: Range<usize>, stack_addr: Range<usize>) {
     info!(
         "MPU switching context to executable memory {exec_addr_range:?} and stack address {stack_addr:?}"
     );
