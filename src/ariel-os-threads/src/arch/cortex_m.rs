@@ -297,16 +297,6 @@ unsafe extern "C" fn sched() -> u64 {
 
             #[cfg(feature = "multi-core")]
             scheduler.add_current_thread_to_rq();
-
-            #[cfg(feature = "mpu")]
-            {
-                // If there is a thread in the rq, assign its memory to the mpu so that it can be used
-                if let Some(thread) = scheduler.current() {
-                    let stack_range = thread.stack_lowest as u32..thread.stack_highest as u32;
-                    ariel_os_mpu::context_switch(0..1, stack_range); //FIXME correct range
-                }
-            }
-
             let next_tid = match scheduler.get_next_tid() {
                 Some(tid) => tid,
                 None => {
@@ -322,6 +312,13 @@ unsafe extern "C" fn sched() -> u64 {
                     }
                 }
             };
+
+            #[cfg(feature = "mpu")]
+            {
+                let thread = scheduler.get_unchecked(next_tid);
+                let stack_range = thread.stack_lowest..thread.stack_highest;
+                ariel_os_mpu::context_switch(0..1, stack_range); //FIXME correct range
+            }
 
             // `current_high_regs` will be null if there is no current thread.
             // This is only the case once, when the very first thread starts running.

@@ -403,14 +403,12 @@ dependencies = [
 name = "ariel-os-mpu"
 version = "0.1.0"
 dependencies = [
- "ariel-os-alloc",
  "ariel-os-debug",
  "ariel-os-utils",
  "bitflags 1.3.2",
  "cfg-if",
  "cortex-m",
  "critical-section",
- "linkme",
 ]
 
 [[package]]

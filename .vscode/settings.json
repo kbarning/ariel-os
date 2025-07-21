@@ -3,7 +3,7 @@
     "cargo",
     "check",
     "--config",
-    ".././ariel-os-cargo.toml",
+    "./ariel-os-cargo.toml",
     "--features=ariel-os/semihosting,ariel-os/single-core,ariel-os/executor-interrupt,ariel-os/rtt-target,ariel-os/panic-printing,ariel-os/debug-console,ariel-os/log,ariel-os/mpu,ariel-os/threading",
     "--message-format=json"
   ],
@@ -22,7 +22,7 @@
   "rust-analyzer.check.command": "clippy",
   "rust-analyzer.check.extraArgs": [
     "--config",
-    ".././ariel-os-cargo.toml",
+    "./ariel-os-cargo.toml",
     "--features=ariel-os/semihosting,ariel-os/single-core,ariel-os/executor-interrupt,ariel-os/rtt-target,ariel-os/panic-printing,ariel-os/debug-console,ariel-os/log,ariel-os/mpu,ariel-os/threading"
   ],
   "rust-analyzer.files.watcher": "server",

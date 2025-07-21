@@ -1,3 +1,4 @@
+use ariel_os_debug::log::info;
 use ariel_os_threads::{THREAD_FNS, start_threading};
 
 /// # Safety

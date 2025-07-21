@@ -3,7 +3,7 @@ incremental = false
 codegen-units = 1
 debug = true
 lto = false
-opt-level = 0     # Optimize for size even in debug builds
+opt-level = "s"     # Optimize for size even in debug builds
 
 [profile.release]
 incremental = false

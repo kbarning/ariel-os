@@ -17,12 +17,12 @@ pub trait Mpu {
     fn disable();
 
     // Invoked on every context switch. Removes the old threads executable data and stack and protects the new one
-    fn context_switch(exec_addr_range: Range<u32>, stack_addr: Range<u32>);
+    fn context_switch(exec_addr_range: Range<usize>, stack_addr: Range<usize>);
 
     // TODO should this function return an unique object that can be used to unprotect/change a region later on?
     // Also should this keep track that the number of supported region is not exceeded?
-    fn protect_region(range: core::ops::Range<usize>, access: MemoryAccess);
-    fn unprotect_region(range: core::ops::Range<usize>);
+    fn protect_region(range: core::ops::Range<usize>, region_n: usize, access: MemoryAccess);
+    fn unprotect_region(range: core::ops::Range<usize>, region_n: usize);
 }
 
 cfg_if::cfg_if! {
