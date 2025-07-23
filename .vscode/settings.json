@@ -23,7 +23,7 @@
   "rust-analyzer.check.extraArgs": [
     "--config",
     "./ariel-os-cargo.toml",
-    "--features=ariel-os/semihosting,ariel-os/single-core,ariel-os/executor-interrupt,ariel-os/rtt-target,ariel-os/panic-printing,ariel-os/debug-console,ariel-os/log,ariel-os/mpu,ariel-os/threading"
+    "--features=ariel-os/semihosting,ariel-os/single-core,ariel-os/executor-interrupt,ariel-os/rtt-target,ariel-os/panic-printing,ariel-os/debug-console,ariel-os/log,ariel-os/mpu,ariel-os/threading",
   ],
   "rust-analyzer.files.watcher": "server",
   "rust-analyzer.server.extraEnv": {
@@ -41,5 +41,8 @@
     "OPENOCD_ARGS": "foo",
     "RUSTUP_TOOLCHAIN": "nightly",
     "SCRIPTS": "../scripts"
+  },
+  "rust-analyzer.cargo.extraEnv": {
+    "RUSTFLAGS": "--cfg context=\"cortex-m\""
   }
 }
