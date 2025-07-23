@@ -22,7 +22,6 @@ pub trait Mpu {
     // TODO should this function return an unique object that can be used to unprotect/change a region later on?
     // Also should this keep track that the number of supported region is not exceeded?
     fn protect_region(range: core::ops::Range<usize>, region_n: usize, access: MemoryAccess);
-    fn unprotect_region(range: core::ops::Range<usize>, region_n: usize);
 }
 
 cfg_if::cfg_if! {

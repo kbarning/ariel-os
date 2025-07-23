@@ -1,4 +1,5 @@
-use cortex_m as _;
+use ariel_os_debug::log::info;
+use cortex_m::{self as _, Peripherals, peripheral::SCB};
 use cortex_m_rt::{__RESET_VECTOR, ExceptionFrame, entry, exception};
 
 use crate::stack::Stack;
@@ -77,6 +78,15 @@ unsafe fn HardFault(ef: &ExceptionFrame) -> ! {
     let ici_it = (((xpsr >> 25) & 0x3) << 6) | ((xpsr >> 10) & 0x3f);
     let thumb_bit = ((xpsr >> 24) & 0x1) == 1;
     let exception_number = (xpsr & 0x1ff) as usize;
+
+    // Extract MMFSR bits (bits 0-7)
+    let mmfsr = (cfsr & 0xFF) as u8;
+
+    // Check if any Memory Management Fault bits are set (except MMARVALID itself)
+    // We consider bits 0,1,3,4,5 as fault indicators.
+    if mmfsr & ((1 << 0) | (1 << 1) | (1 << 3) | (1 << 4) | (1 << 5)) != 0 {
+        mem_manage_fault_trace(mmfsr, cfsr);
+    }
 
     panic!(
         "{} HardFault.\r\n\
@@ -173,6 +183,39 @@ unsafe fn HardFault(ef: &ExceptionFrame) -> ! {
         bfarvalid,
         bfar
     );
+}
+
+fn mem_manage_fault_trace(mmfsr: u8, cfsr: u32) {
+    let mmfsr = (cfsr & 0xFF) as u8;
+
+    info!(
+        "Memory Management Fault Status Register (MMFSR): 0x{:02X}",
+        mmfsr
+    );
+
+    if mmfsr & (1 << 0) != 0 {
+        info!(" - Instruction Access Violation (IACCVIOL)");
+    }
+    if mmfsr & (1 << 1) != 0 {
+        info!(" - Data Access Violation (DACCVIOL)");
+    }
+    if mmfsr & (1 << 3) != 0 {
+        info!(" - MemManage Fault on Unstacking (MUNSTKERR)");
+    }
+    if mmfsr & (1 << 4) != 0 {
+        info!(" - MemManage Fault on Stacking (MSTKERR)");
+    }
+    if mmfsr & (1 << 5) != 0 {
+        info!(" - MemManage Fault on Lazy FP State Preservation (MLSPERR)");
+    }
+
+    if mmfsr & (1 << 7) != 0 {
+        let mut peripherals = unsafe { Peripherals::steal() };
+        let fault_addr = peripherals.SCB.mmfar.read();
+        info!(" - Fault Address (MMFAR): 0x{:08X}", fault_addr);
+    } else {
+        info!(" - Fault Address (MMFAR) not valid");
+    }
 }
 
 /// # Safety
