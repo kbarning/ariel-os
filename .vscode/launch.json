@@ -3,6 +3,32 @@
   "configurations": [
     {
       "preLaunchTask": "Build Playground",
+      "cwd": "${workspaceFolder}",
+      "executable": "build/bin/st-nucleo-l552ze-q/playground/playground.elf",
+      "name": "Debug with ST-Link",
+      "request": "launch",
+      "type": "cortex-debug",
+      "runToEntryPoint": "",
+      "showDevDebugOutput": "none",
+      "servertype": "openocd",
+      "configFiles": [
+        "interface/stlink.cfg",
+        "target/stm32l5x.cfg"
+      ],
+      "rttConfig": {
+        "enabled": true,
+        "address": "auto",
+        "decoders": [
+          {
+            "label": "",
+            "port": 0,
+            "type": "console"
+          }
+        ]
+      }
+    },
+    {
+      "preLaunchTask": "Build Playground",
       "type": "probe-rs-debug",
       "request": "launch",
       "name": "probe_rs Executable Test",
@@ -35,6 +61,6 @@
           ]
         }
       ]
-    }
-  ]
+    },
+  ],
 }

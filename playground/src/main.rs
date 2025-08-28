@@ -2,7 +2,7 @@
 #![no_std]
 #![allow(unconditional_panic)]
 
-use ariel_os::debug::log::*;
+use ariel_os::debug::{ExitCode, exit, log::*};
 use ariel_os::thread::*;
 
 #[ariel_os::thread(autostart)]
@@ -13,19 +13,17 @@ fn thread_a() {
         cortex_m::register::psp::read()
     );
 
-    for _ in 0..10 {
-        info!("Thread A Looping");
+    for _ in 0..1000 {
+        info!("Thread A Looping 1");
     }
 
     yield_same();
 
     for _ in 0..10 {
-        info!("Thread A Looping");
+        info!("Thread A Looping 2");
     }
 
     yield_same();
-
-    loop {}
 }
 
 #[ariel_os::thread(autostart)]
@@ -36,14 +34,14 @@ fn thread_b() {
         cortex_m::register::psp::read()
     );
 
-    for _ in 0..10 {
-        info!("Thread B Looping");
+    for _ in 0..100 {
+        info!("Thread B Looping 1");
     }
 
     yield_same();
 
     for _ in 0..10 {
-        info!("Thread B Looping");
+        info!("Thread B Looping 2");
     }
 
     yield_same();
@@ -58,17 +56,17 @@ fn thread_c() {
     );
 
     for _ in 0..10 {
-        info!("Thread C Looping");
+        info!("Thread C Looping 1");
     }
 
     for _ in 0..10 {
-        info!("Thread C Looping again");
+        info!("Thread C Looping 2");
     }
 
     yield_same();
 
     for _ in 0..10 {
-        info!("Thread C Looping");
+        info!("Thread C Looping 3");
     }
 
     yield_same();
