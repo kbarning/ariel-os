@@ -313,13 +313,6 @@ unsafe extern "C" fn sched() -> u64 {
                 }
             };
 
-            #[cfg(feature = "mpu")]
-            {
-                let thread = scheduler.get_unchecked(next_tid);
-                let stack_range = thread.stack_lowest..thread.stack_highest;
-                ariel_os_mpu::context_switch(0..1, stack_range); //FIXME correct range
-            }
-
             // `current_high_regs` will be null if there is no current thread.
             // This is only the case once, when the very first thread starts running.
             // The returned `r1` therefore will be null, and saving/ restoring
@@ -339,6 +332,13 @@ unsafe extern "C" fn sched() -> u64 {
             }
 
             let next = scheduler.get_unchecked(next_tid);
+
+            #[cfg(feature = "mpu")]
+            {
+                let stack_range = next.stack_lowest..next.stack_highest;
+                ariel_os_mpu::context_switch(stack_range);
+            }
+
             // SAFETY: changing the PSP as part of context switch
             unsafe { cortex_m::register::psp::write(next.data.sp as u32) };
 

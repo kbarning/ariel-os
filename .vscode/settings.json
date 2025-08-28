@@ -44,5 +44,6 @@
   },
   "rust-analyzer.cargo.extraEnv": {
     "RUSTFLAGS": "--cfg context=\"cortex-m\""
-  }
+  },
+  "cortex-debug.variableUseNaturalFormat": true
 }
