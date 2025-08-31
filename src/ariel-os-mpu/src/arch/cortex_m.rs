@@ -38,7 +38,7 @@ impl Mpu for Cpu {
 
         // FIXME get the regions from the linker file
         const RAM_BEGIN: usize = 0x2000_0000;
-        const RAM_END: usize = RAM_BEGIN + 256 * 1024;
+        const RAM_END: usize = 0x3fff_ffff;
 
         // Configure the stack data in ram
         Self::configure_region(
@@ -70,7 +70,8 @@ impl Mpu for Cpu {
                 // And we explicitly don't allow privileged code to use any kind of not configured
                 // Memory. Also we don't set the HFNMIENA flag, so that the MPU is not active in a NMI handler
                 const ENABLE: u32 = 0b1;
-                mpu.ctrl.write(ENABLE); // Enable MPU
+                const PRIVDEFENA: u32 = 0b100;
+                mpu.ctrl.write(ENABLE | PRIVDEFENA); // Enable MPU
             }
         });
     }
@@ -92,6 +93,7 @@ impl Mpu for Cpu {
         // Maybe be called from another critical section in sched(), but it is safe to do nested critical sections
         // It will be optimized to no-op
         critical_section::with(|_| {
+            core::sync::atomic::fence(core::sync::atomic::Ordering::Acquire);
             unsafe {
                 let mpu = { &*cortex_m::peripheral::MPU::PTR };
 
@@ -129,6 +131,7 @@ impl Mpu for Cpu {
 
                 mpu.rlar
                     .write(end_address_truncated | privileged_execute_never | attr_indx | enable);
+                core::sync::atomic::fence(core::sync::atomic::Ordering::Release);
             };
         });
     }
