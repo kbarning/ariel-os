@@ -69,5 +69,5 @@ fn thread_c() {
         info!("Thread C Looping 3");
     }
 
-    yield_same();
+    exit(ExitCode::SUCCESS);
 }

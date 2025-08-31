@@ -604,7 +604,8 @@ contexts:
       PROBE_RS_CHIP: STM32L552ZE
       RUSTFLAGS:
         - --cfg capability=\"hw/stm32-rng\"
-
+      # isr_stacksize_required: 
+      #  - "8192"
 
 modules:
   - name: thumbv6m-none-eabi
