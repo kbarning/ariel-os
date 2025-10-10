@@ -78,7 +78,6 @@ unsafe fn MemoryManagement() -> ! {
 #[exception]
 unsafe fn HardFault(ef: &ExceptionFrame) -> ! {
     use core::arch::asm;
-    asm!("bkpt");
 
     let mode_str = "Kernel";
 

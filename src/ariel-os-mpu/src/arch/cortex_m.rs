@@ -44,7 +44,7 @@ impl Mpu for Cpu {
         }
 
         // Configuration done, enable MPU
-        Self::enable();
+        //Self::enable();
     }
 
     fn enable() {
