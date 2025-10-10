@@ -813,6 +813,6 @@ pub fn current_stack_limits() -> Option<(usize, usize)> {
     SCHEDULER.with_mut(|mut scheduler| {
         scheduler
             .current()
-            .map(|thread| (thread.stack_lowest, thread.stack_highest))
+            .map(|thread| (thread.stack_range.start, thread.stack_range.end))
     })
 }

@@ -24,11 +24,8 @@ pub struct Thread {
     /// Core affinity of the thread.
     #[cfg(feature = "core-affinity")]
     pub core_affinity: crate::CoreAffinity,
-
-    /// Lowest stack address.
-    pub stack_lowest: usize,
-    /// Highest stack address.
-    pub stack_highest: usize,
+    // Address range of the stack, from lowest to highest.
+    pub stack_range: core::ops::RangeInclusive<usize>,
 }
 
 /// Possible states of a thread
@@ -65,8 +62,7 @@ impl Thread {
             tid: ThreadId::new(0),
             #[cfg(feature = "core-affinity")]
             core_affinity: crate::CoreAffinity::no_affinity(),
-            stack_highest: 0,
-            stack_lowest: 0,
+            stack_range: 0..0,
         }
     }
 
@@ -79,7 +75,7 @@ impl Thread {
         // Byte that's used to pain stacks.
         const STACK_PAINT_COLOR: u8 = 0xCC;
 
-        for pos in self.stack_lowest..sp {
+        for pos in self.stack_range.start..sp {
             // SAFETY: Writing to the slice that was passed to `setup_stack()` is fine
             unsafe {
                 core::ptr::write_volatile(pos as *mut u8, STACK_PAINT_COLOR);

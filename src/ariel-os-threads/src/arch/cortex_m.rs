@@ -73,8 +73,7 @@ impl Arch for Cpu {
         }
 
         thread.data.sp = stack_pos as usize;
-        thread.stack_lowest = stack_start;
-        thread.stack_highest = stack_highest;
+        thread.stack_range = stack_start..=stack_highest;
 
         // Safety: This is the place to initialize stack painting.
         unsafe { thread.stack_paint_init(stack_pos as usize) };
@@ -339,7 +338,7 @@ unsafe extern "C" fn sched() -> u64 {
             #[cfg(armv8m)]
             // SAFETY: changing the PSPLIM as part of context switch
             unsafe {
-                cortex_m::register::psplim::write(next.stack_lowest as u32)
+                cortex_m::register::psplim::write(next.stack_range.end as u32)
             };
 
             let next_high_regs = next.data.high_regs.as_ptr();
