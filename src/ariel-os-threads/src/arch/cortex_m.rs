@@ -347,7 +347,8 @@ unsafe extern "C" fn sched() -> u64 {
             #[cfg(armv8m)]
             // SAFETY: changing the PSPLIM as part of context switch
             unsafe {
-                cortex_m::register::psplim::write(next.stack_lowest as u32)
+                // Commented out to emulate the armv7m behavior
+                //cortex_m::register::psplim::write(next.stack_lowest as u32)
             };
 
             let next_high_regs = next.data.high_regs.as_ptr();

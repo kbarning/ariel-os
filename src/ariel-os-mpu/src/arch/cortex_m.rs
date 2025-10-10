@@ -13,8 +13,6 @@ impl Mpu for Cpu {
     const N_REGIONS: usize = 8; // ARM v8m supports 8 regions
 
     fn init() {
-        // Configure the program data and stack of the OS itself
-
         const FLASH_BEGIN: usize = 0x800_0000; // FIXME hardcoded for stm32 at the moment
         const FLASH_END: usize = FLASH_BEGIN + 512 * 1024; // 512k length according to memory.x
 
@@ -36,17 +34,6 @@ impl Mpu for Cpu {
             MemoryAccess::WRITEABLE | MemoryAccess::READABLE,
         );
 
-        // FIXME get the regions from the linker file
-        const RAM_BEGIN: usize = 0x2000_0000;
-        const RAM_END: usize = 0x3fff_ffff;
-
-        // Configure the stack data in ram
-        Self::configure_region(
-            RAM_BEGIN..RAM_END,
-            Self::N_REGIONS - MpuRegionUsage::OS_STACK as usize,
-            MemoryAccess::READABLE | MemoryAccess::WRITEABLE,
-        );
-
         unsafe {
             const MEMFAULTENA: u32 = 0b1 << 16;
             let mut peripherals = Peripherals::steal();
@@ -66,11 +53,10 @@ impl Mpu for Cpu {
                 // The MPU should be enabled only in a critical section according to the Armv8-M Memory Model and Memory Protection manual
                 let mpu = { &*cortex_m::peripheral::MPU::PTR };
                 // We enable the MPU by setting the ENABLE bit in the ctrl register
-                // We do not set the PRIVDEFENA flag, because ariel-os is always running in privileged mode
-                // And we explicitly don't allow privileged code to use any kind of not configured
-                // Memory. Also we don't set the HFNMIENA flag, so that the MPU is not active in a NMI handler
+                // We the PRIVDEFENA flag, so that we can use all regions by default and protect the ones we want
+                // Also we don't set the HFNMIENA flag, so that the MPU is not active in a NMI handler
                 const ENABLE: u32 = 0b1;
-                const PRIVDEFENA: u32 = 0b100;
+                const PRIVDEFENA: u32 = 0b1 << 2;
                 mpu.ctrl.write(ENABLE | PRIVDEFENA); // Enable MPU
             }
         });
@@ -85,11 +71,6 @@ impl Mpu for Cpu {
     }
 
     fn configure_region(range: core::ops::Range<usize>, region_n: usize, access: MemoryAccess) {
-        info!(
-            "Configuring region {} from {:x}-{:x}",
-            region_n, range.start, range.end
-        );
-
         // Maybe be called from another critical section in sched(), but it is safe to do nested critical sections
         // It will be optimized to no-op
         critical_section::with(|_| {

@@ -12,8 +12,7 @@ use crate::arch::MemoryAccess;
 pub enum MpuRegionUsage {
     FLASH = 1,
     PERIPHERALS = 2,
-    THREAD_STACK = 3,
-    OS_STACK = 4,
+    STACKREDZONE = 3,
 }
 
 pub unsafe fn init_mpu() {
@@ -22,9 +21,11 @@ pub unsafe fn init_mpu() {
 }
 
 pub fn context_switch(stack_addr: Range<usize>) {
+    let redzone_range = stack_addr.start..stack_addr.start.saturating_add(32); // FIXME correct?
+    // Disallow access, so that we detect a stack overflow with redzone
     <Cpu as Mpu>::configure_region(
-        stack_addr,
-        <Cpu as Mpu>::N_REGIONS - MpuRegionUsage::THREAD_STACK as usize,
-        MemoryAccess::READABLE | MemoryAccess::WRITEABLE,
+        redzone_range,
+        <Cpu as Mpu>::N_REGIONS - MpuRegionUsage::STACKREDZONE as usize,
+        MemoryAccess::empty(),
     );
 }

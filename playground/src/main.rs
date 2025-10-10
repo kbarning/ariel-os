@@ -13,6 +13,9 @@ fn thread_a() {
         cortex_m::register::psp::read()
     );
 
+    // Stack overflow should occur
+    recursion();
+
     for _ in 0..1000 {
         info!("Thread A Looping 1");
     }
@@ -24,6 +27,10 @@ fn thread_a() {
     }
 
     yield_same();
+}
+
+fn recursion() {
+    recursion();
 }
 
 #[ariel_os::thread(autostart)]
