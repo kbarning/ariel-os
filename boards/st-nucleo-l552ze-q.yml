@@ -1,0 +1,5 @@
+boards:
+    st-nucleo-l552ze-q:
+      chip: stm32l552ze
+    ariel:
+      swi: LPUART1

@@ -299,6 +299,7 @@ unsafe extern "C" fn sched() -> u64 {
 
             #[cfg(feature = "multi-core")]
             scheduler.add_current_thread_to_rq();
+
             let next_tid = match scheduler.get_next_tid() {
                 Some(tid) => tid,
                 None => {
@@ -334,20 +335,12 @@ unsafe extern "C" fn sched() -> u64 {
             }
 
             let next = scheduler.get_unchecked(next_tid);
-
-            #[cfg(feature = "mpu")]
-            {
-                let stack_range = next.stack_lowest..next.stack_highest;
-                ariel_os_mpu::context_switch(stack_range);
-            }
-
             // SAFETY: changing the PSP as part of context switch
             unsafe { cortex_m::register::psp::write(next.data.sp as u32) };
 
             #[cfg(armv8m)]
             // SAFETY: changing the PSPLIM as part of context switch
             unsafe {
-                // Commented out to emulate the armv7m behavior
                 //cortex_m::register::psplim::write(next.stack_lowest as u32)
             };
 

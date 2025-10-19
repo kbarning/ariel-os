@@ -2,20 +2,17 @@
 #![no_std]
 #![allow(unconditional_panic)]
 
+use core::mem::MaybeUninit;
+
 use ariel_os::debug::{ExitCode, exit, log::*};
 use ariel_os::thread::*;
 
 #[ariel_os::thread(autostart)]
 fn thread_a() {
-    info!(
-        "Thread A Running at address {:x} and sp {:x}",
-        cortex_m::register::pc::read(),
-        cortex_m::register::psp::read()
-    );
-
     // 20003030 -> 20003050
 
     // Stack overflow should occur
+    cortex_m::interrupt::disable();
     recursion(0);
 
     for _ in 0..1000 {
@@ -32,7 +29,8 @@ fn thread_a() {
 }
 
 fn recursion(i: usize) {
-    info!("SP: {:x} -> {:x}", cortex_m::register::psp::read(), i);
+    let arr: MaybeUninit<[u8; 1000]> = MaybeUninit::uninit();
+    core::hint::black_box(arr);
     recursion(i + 1);
 }
 

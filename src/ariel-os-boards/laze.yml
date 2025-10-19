@@ -215,3 +215,12 @@ builders:
   env:
     CARGO_ENV:
     - CONFIG_SWI=USART2_LPUART2
+
+- name: st-nucleo-l552ze-q
+  parent: stm32l552ze
+  provides:
+    - has_swi
+    - has_usb_device_port
+  env:
+    CARGO_ENV:
+      - CONFIG_SWI=LPUART1

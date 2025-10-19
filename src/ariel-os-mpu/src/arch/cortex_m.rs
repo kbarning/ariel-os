@@ -1,6 +1,6 @@
 use crate::{Mpu, MpuRegionUsage};
 use ariel_os_debug::log::info;
-use cortex_m::{self as _, Peripherals, peripheral::scb::SystemHandler};
+use cortex_m::{self as _, Peripherals, interrupt, peripheral::scb::SystemHandler};
 
 use crate::arch::MemoryAccess;
 
@@ -13,38 +13,40 @@ impl Mpu for Cpu {
     const N_REGIONS: usize = 8; // ARM v8m supports 8 regions
 
     fn init() {
-        const FLASH_BEGIN: usize = 0x800_0000; // FIXME hardcoded for stm32 at the moment
-        const FLASH_END: usize = FLASH_BEGIN + 512 * 1024; // 512k length according to memory.x
+        critical_section::with(|_| {
+            const FLASH_BEGIN: usize = 0x800_0000; // FIXME hardcoded for stm32 at the moment
+            const FLASH_END: usize = FLASH_BEGIN + 512 * 1024; // 512k length according to memory.x
 
-        // Configure flash executable data
-        // For safety, we assign the binary executable data the second highest region, because should some overlapping happen, the highest region of the stack should be preferred to prevent shell code execution
-        Self::configure_region(
-            FLASH_BEGIN..FLASH_END,
-            Self::N_REGIONS - MpuRegionUsage::FLASH as usize,
-            MemoryAccess::EXECUTABLE | MemoryAccess::READABLE,
-        );
+            // Configure flash executable data
+            // For safety, we assign the binary executable data the second highest region, because should some overlapping happen, the highest region of the stack should be preferred to prevent shell code execution
+            Self::configure_region(
+                FLASH_BEGIN..FLASH_END,
+                Self::N_REGIONS - MpuRegionUsage::FLASH as usize,
+                MemoryAccess::EXECUTABLE | MemoryAccess::READABLE,
+            );
 
-        const PERIPHERALS_BEGIN: usize = 0x4000_0000; // FIXME hardcoded for stm32 at the moment
-        const PERIPHERALS_END: usize = 0x4FFF_FFFF;
+            const PERIPHERALS_BEGIN: usize = 0x4000_0000; // FIXME hardcoded for stm32 at the moment
+            const PERIPHERALS_END: usize = 0x4FFF_FFFF;
 
-        // Configure peripherals memory
-        Self::configure_region(
-            PERIPHERALS_BEGIN..PERIPHERALS_END,
-            Self::N_REGIONS - MpuRegionUsage::PERIPHERALS as usize,
-            MemoryAccess::WRITEABLE | MemoryAccess::READABLE,
-        );
+            // Configure peripherals memory
+            Self::configure_region(
+                PERIPHERALS_BEGIN..PERIPHERALS_END,
+                Self::N_REGIONS - MpuRegionUsage::PERIPHERALS as usize,
+                MemoryAccess::WRITEABLE | MemoryAccess::READABLE,
+            );
 
-        unsafe {
-            const MEMFAULTENA: u32 = 0b1 << 16;
-            let mut peripherals = Peripherals::steal();
-            peripherals
-                .SCB
-                .set_priority(SystemHandler::MemoryManagement, 0xFE); // FIXEM higher priority then PendSv?
-            peripherals.SCB.shcsr.modify(|reg| reg | MEMFAULTENA); // Enable MEMFAULTENA so that the MEMFAULT handler will be called on MPU exception
-        }
-
-        // Configuration done, enable MPU
-        //Self::enable();
+            unsafe {
+                const MEMFAULTENA: u32 = 0b1 << 16;
+                let mut peripherals = Peripherals::steal();
+                peripherals
+                    .SCB
+                    .set_priority(SystemHandler::MemoryManagement, 0xFE); // FIXEM higher priority then PendSv?
+                peripherals.SCB.shcsr.modify(|reg| reg | MEMFAULTENA); // Enable MEMFAULTENA so that the MEMFAULT handler will be called on MPU exception
+                info!("SCB {:b}\n\n", peripherals.SCB.shcsr.read());
+            }
+            // Configuration done, enable MPU
+            Self::enable();
+        });
     }
 
     fn enable() {
@@ -56,7 +58,7 @@ impl Mpu for Cpu {
                 // We the PRIVDEFENA flag, so that we can use all regions by default and protect the ones we want
                 // Also we don't set the HFNMIENA flag, so that the MPU is not active in a NMI handler
                 const ENABLE: u32 = 0b1;
-                const PRIVDEFENA: u32 = 0b1 << 2;
+                const PRIVDEFENA: u32 = 0b10;
                 mpu.ctrl.write(ENABLE | PRIVDEFENA); // Enable MPU
             }
         });

@@ -1,5 +1,5 @@
-use ariel_os_debug::log::{self, info};
 #![expect(unsafe_code)]
+use ariel_os_debug::log::{self, info};
 
 use cortex_m::{self as _, Peripherals};
 use cortex_m_rt::{__RESET_VECTOR, ExceptionFrame, entry, exception};
