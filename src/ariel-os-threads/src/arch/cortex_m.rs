@@ -1,5 +1,3 @@
-#![expect(unsafe_code)]
-
 use crate::{Arch, SCHEDULER, Thread, cleanup};
 use core::{arch::global_asm, ptr::write_volatile};
 use cortex_m::peripheral::{SCB, scb::SystemHandler};
@@ -299,7 +297,6 @@ unsafe extern "C" fn sched() -> u64 {
 
             #[cfg(feature = "multi-core")]
             scheduler.add_current_thread_to_rq();
-
             let next_tid = match scheduler.get_next_tid() {
                 Some(tid) => tid,
                 None => {
@@ -335,6 +332,13 @@ unsafe extern "C" fn sched() -> u64 {
             }
 
             let next = scheduler.get_unchecked(next_tid);
+
+            #[cfg(feature = "mpu")]
+            {
+                let stack_range = next.stack_lowest..next.stack_highest;
+                ariel_os_mpu::context_switch(stack_range);
+            }
+
             // SAFETY: changing the PSP as part of context switch
             unsafe { cortex_m::register::psp::write(next.data.sp as u32) };
 

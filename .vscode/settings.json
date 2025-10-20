@@ -42,5 +42,6 @@
     "RUSTFLAGS": "--cfg context=\"st-nucleo-l552ze-q\" --cfg context=\"stm32l552ze\" --cfg context=\"stm32\" --cfg context=\"ariel-os\" --cfg context=\"default\" --cfg capability=\"hw/stm32-rng\" --cfg stable -Cembed-bitcode=yes -Clto=fat -Ccodegen-units=1 --cfg capability=\"hw/device-identity\" --cfg armv8m --cfg armv8m_eabihf -Clink-arg=--nmagic -Clink-arg=--no-eh-frame-hdr -Clink-arg=-Tlinkme.x -Clink-arg=-Tlink.x -Clink-arg=-Teheap.x -Clink-arg=-Tdevice.x -Clink-arg=-Tisr_stack.x --cfg context=\"cortex-m\" --cfg context=\"cortex-m33f\"",
     "RUSTUP_TOOLCHAIN": "nightly",
     "SCRIPTS": "./scripts"
-  }
+  },
+  "cortex-debug.variableUseNaturalFormat": false
 }

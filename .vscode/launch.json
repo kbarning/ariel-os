@@ -15,6 +15,7 @@
         "interface/stlink.cfg",
         "target/stm32l5x.cfg"
       ],
+      "svdPath": "svd/STM32L552.svd",
       "rttConfig": {
         "enabled": true,
         "address": "auto",

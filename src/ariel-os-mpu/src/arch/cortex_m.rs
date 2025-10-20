@@ -42,7 +42,6 @@ impl Mpu for Cpu {
                     .SCB
                     .set_priority(SystemHandler::MemoryManagement, 0xFE); // FIXEM higher priority then PendSv?
                 peripherals.SCB.shcsr.modify(|reg| reg | MEMFAULTENA); // Enable MEMFAULTENA so that the MEMFAULT handler will be called on MPU exception
-                info!("SCB {:b}\n\n", peripherals.SCB.shcsr.read());
             }
             // Configuration done, enable MPU
             Self::enable();
@@ -58,7 +57,7 @@ impl Mpu for Cpu {
                 // We the PRIVDEFENA flag, so that we can use all regions by default and protect the ones we want
                 // Also we don't set the HFNMIENA flag, so that the MPU is not active in a NMI handler
                 const ENABLE: u32 = 0b1;
-                const PRIVDEFENA: u32 = 0b10;
+                const PRIVDEFENA: u32 = 0b100;
                 mpu.ctrl.write(ENABLE | PRIVDEFENA); // Enable MPU
             }
         });
@@ -107,6 +106,10 @@ impl Mpu for Cpu {
 
                 // [LIMIT=31:5|4=PXN|ATTRIndx=3:1|EN=0]
                 let end_address_truncated = (range.end as u32) & !0b1_1111; // Only bit 31 to 5 are used for limit address
+                info!(
+                    "REGION {:x}-{:x}",
+                    start_address_truncated, end_address_truncated,
+                );
                 let privileged_execute_never =
                     (!access.contains(MemoryAccess::EXECUTABLE) as u32) << 4;
                 let attr_indx = 0b0u32 << 1; // FIXME preconfigure MAIR

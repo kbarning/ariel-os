@@ -29,7 +29,7 @@ fn thread_a() {
 }
 
 fn recursion(i: usize) {
-    let arr: MaybeUninit<[u8; 1000]> = MaybeUninit::uninit();
+    let arr: MaybeUninit<[u8; 1]> = MaybeUninit::uninit();
     core::hint::black_box(arr);
     recursion(i + 1);
 }

@@ -3,7 +3,6 @@
 mod arch;
 
 use arch::{Cpu, Mpu};
-use ariel_os_debug::log::info;
 use core::ops::Range;
 
 use crate::arch::MemoryAccess;
@@ -16,12 +15,20 @@ pub enum MpuRegionUsage {
 }
 
 pub unsafe fn init_mpu() {
-    info!("Initializing MPU");
     <Cpu as Mpu>::init();
 }
 
 pub fn context_switch(stack_addr: Range<usize>) {
-    let redzone_range = stack_addr.start..stack_addr.start.saturating_add(32); // FIXME correct?
+    let truncated_start = stack_addr.start & !0b1_1111;
+
+    const PAGESIZE: usize = 32;
+
+    let redzone_range = if truncated_start == stack_addr.start {
+        stack_addr.start..stack_addr.start.saturating_add(PAGESIZE)
+    } else {
+        stack_addr.start.saturating_add(PAGESIZE)..stack_addr.start.saturating_add(PAGESIZE * 2)
+    };
+
     // Disallow access, so that we detect a stack overflow with redzone
     <Cpu as Mpu>::configure_region(
         redzone_range,
