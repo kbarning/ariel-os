@@ -11,10 +11,6 @@ use ariel_os::thread::*;
 fn thread_a() {
     // 20003030 -> 20003050
 
-    // Stack overflow should occur
-    cortex_m::interrupt::disable();
-    recursion(0);
-
     for _ in 0..1000 {
         info!("Thread A Looping 1");
     }
@@ -31,6 +27,10 @@ fn thread_a() {
 fn recursion(i: usize) {
     let arr: MaybeUninit<[u8; 1]> = MaybeUninit::uninit();
     core::hint::black_box(arr);
+    let sp = cortex_m::register::psp::read();
+    if sp < 0x20003090 {
+        cortex_m::asm::bkpt();
+    }
     recursion(i + 1);
 }
 
