@@ -20,7 +20,7 @@ impl Mpu for Cpu {
             // Configure flash executable data
             // For safety, we assign the binary executable data the second highest region, because should some overlapping happen, the highest region of the stack should be preferred to prevent shell code execution
             Self::configure_region(
-                FLASH_BEGIN..FLASH_END,
+                FLASH_BEGIN..=FLASH_END,
                 Self::N_REGIONS - MpuRegionUsage::FLASH as usize,
                 MemoryAccess::EXECUTABLE | MemoryAccess::READABLE,
             );
@@ -30,7 +30,7 @@ impl Mpu for Cpu {
 
             // Configure peripherals memory
             Self::configure_region(
-                PERIPHERALS_BEGIN..PERIPHERALS_END,
+                PERIPHERALS_BEGIN..=PERIPHERALS_END,
                 Self::N_REGIONS - MpuRegionUsage::PERIPHERALS as usize,
                 MemoryAccess::WRITEABLE | MemoryAccess::READABLE,
             );
@@ -71,7 +71,11 @@ impl Mpu for Cpu {
         });
     }
 
-    fn configure_region(range: core::ops::Range<usize>, region_n: usize, access: MemoryAccess) {
+    fn configure_region(
+        range: core::ops::RangeInclusive<usize>,
+        region_n: usize,
+        access: MemoryAccess,
+    ) {
         // Maybe be called from another critical section in sched(), but it is safe to do nested critical sections
         // It will be optimized to no-op
         critical_section::with(|_| {
@@ -89,7 +93,7 @@ impl Mpu for Cpu {
                 mpu.rnr.write(region_n as u32);
 
                 //[BASE=31:5|4:3=SH|AP=2:1|XN=0]
-                let start_address_truncated = (range.start as u32) & !0b1_1111; // Only bit 31 to 5 are used for base address
+                let start_address_truncated = (*range.start() as u32) & !0b1_1111; // Only bit 31 to 5 are used for base address
                 let shareability = 0b00u32 << 2; // At the moment, this is disabled
                 let access_permission = if access.contains(MemoryAccess::WRITEABLE) {
                     const READ_WRITE_PRIVILEGED: u32 = 0;
@@ -105,7 +109,7 @@ impl Mpu for Cpu {
                 );
 
                 // [LIMIT=31:5|4=PXN|ATTRIndx=3:1|EN=0]
-                let end_address_truncated = (range.end as u32) & !0b1_1111; // Only bit 31 to 5 are used for limit address
+                let end_address_truncated = (*range.end() as u32) & !0b1_1111; // Only bit 31 to 5 are used for limit address
                 info!(
                     "REGION {:x}-{:x}",
                     start_address_truncated, end_address_truncated,

@@ -61,6 +61,8 @@ unsafe fn MemoryManagement() -> ! {
         info!(" - Fault Address (MMFAR) not valid");
     }
 
+    cortex_m::asm::bkpt();
+
     ariel_os_debug::exit(ariel_os_debug::ExitCode::FAILURE);
 
     loop {}

@@ -335,8 +335,7 @@ unsafe extern "C" fn sched() -> u64 {
 
             #[cfg(feature = "mpu")]
             {
-                let stack_range = next.stack_lowest..next.stack_highest;
-                ariel_os_mpu::context_switch(stack_range);
+                ariel_os_mpu::context_switch(next.stack_lowest);
             }
 
             // SAFETY: changing the PSP as part of context switch
