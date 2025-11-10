@@ -1,6 +1,8 @@
+#![expect(unsafe_code)]
+
 use crate::{Mpu, MpuRegionUsage};
 use ariel_os_debug::log::info;
-use cortex_m::{self as _, Peripherals, interrupt, peripheral::scb::SystemHandler};
+use cortex_m::{self as _, Peripherals};
 
 use crate::arch::MemoryAccess;
 
@@ -21,7 +23,7 @@ impl Mpu for Cpu {
             // For safety, we assign the binary executable data the second highest region, because should some overlapping happen, the highest region of the stack should be preferred to prevent shell code execution
             Self::configure_region(
                 FLASH_BEGIN..=FLASH_END,
-                Self::N_REGIONS - MpuRegionUsage::FLASH as usize,
+                Self::N_REGIONS - MpuRegionUsage::Flash as usize,
                 MemoryAccess::EXECUTABLE | MemoryAccess::READABLE,
             );
 
@@ -31,16 +33,17 @@ impl Mpu for Cpu {
             // Configure peripherals memory
             Self::configure_region(
                 PERIPHERALS_BEGIN..=PERIPHERALS_END,
-                Self::N_REGIONS - MpuRegionUsage::PERIPHERALS as usize,
+                Self::N_REGIONS - MpuRegionUsage::Peripherals as usize,
                 MemoryAccess::WRITEABLE | MemoryAccess::READABLE,
             );
 
             unsafe {
                 const MEMFAULTENA: u32 = 0b1 << 16;
                 let mut peripherals = Peripherals::steal();
-                peripherals
-                    .SCB
-                    .set_priority(SystemHandler::MemoryManagement, 0xFE); // FIXEM higher priority then PendSv?
+                peripherals.SCB.set_priority(
+                    cortex_m::peripheral::scb::SystemHandler::MemoryManagement,
+                    0xFE,
+                ); // FIXEM higher priority then PendSv?
                 peripherals.SCB.shcsr.modify(|reg| reg | MEMFAULTENA); // Enable MEMFAULTENA so that the MEMFAULT handler will be called on MPU exception
             }
             // Configuration done, enable MPU

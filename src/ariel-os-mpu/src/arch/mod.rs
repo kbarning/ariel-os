@@ -12,6 +12,7 @@ pub trait Mpu {
 
     fn init();
     fn enable();
+    #[allow(dead_code)] // Not used at the moment
     fn disable();
     fn configure_region(
         range: core::ops::RangeInclusive<usize>,

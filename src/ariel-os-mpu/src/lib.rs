@@ -1,17 +1,17 @@
 #![no_std]
+#![expect(unsafe_code)]
 
 mod arch;
 
 use arch::{Cpu, Mpu};
-use core::ops::{Range, RangeInclusive};
 
 use crate::arch::MemoryAccess;
 
 // FIXME reorder regions priority
 pub enum MpuRegionUsage {
-    FLASH = 1,
-    PERIPHERALS = 2,
-    STACK_REDZONE = 3,
+    Flash = 1,
+    Peripherals = 2,
+    StackRedzone = 3,
 }
 
 pub unsafe fn init_mpu() {
@@ -32,7 +32,7 @@ pub fn context_switch(stack_begin: usize) {
     // Disallow access, so that we detect a stack overflow with redzone
     <Cpu as Mpu>::configure_region(
         redzone_range,
-        <Cpu as Mpu>::N_REGIONS - MpuRegionUsage::STACK_REDZONE as usize,
+        <Cpu as Mpu>::N_REGIONS - MpuRegionUsage::StackRedzone as usize,
         MemoryAccess::empty(),
     );
 }

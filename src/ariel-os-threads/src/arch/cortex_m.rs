@@ -341,11 +341,11 @@ unsafe extern "C" fn sched() -> u64 {
             // SAFETY: changing the PSP as part of context switch
             unsafe { cortex_m::register::psp::write(next.data.sp as u32) };
 
-            #[cfg(armv8m)]
-            // SAFETY: changing the PSPLIM as part of context switch
-            unsafe {
-                //cortex_m::register::psplim::write(next.stack_lowest as u32)
-            };
+            // #[cfg(armv8m)]
+            // // SAFETY: changing the PSPLIM as part of context switch
+            // unsafe {
+            //     //cortex_m::register::psplim::write(next.stack_lowest as u32)
+            // };
 
             let next_high_regs = next.data.high_regs.as_ptr();
 
