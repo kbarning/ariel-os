@@ -82,7 +82,6 @@ impl Mpu for Cpu {
         // Maybe be called from another critical section in sched(), but it is safe to do nested critical sections
         // It will be optimized to no-op
         critical_section::with(|_| {
-            core::sync::atomic::fence(core::sync::atomic::Ordering::Acquire);
             unsafe {
                 let mpu = { &*cortex_m::peripheral::MPU::PTR };
 
@@ -113,10 +112,7 @@ impl Mpu for Cpu {
 
                 // [LIMIT=31:5|4=PXN|ATTRIndx=3:1|EN=0]
                 let end_address_truncated = (*range.end() as u32) & !0b1_1111; // Only bit 31 to 5 are used for limit address
-                info!(
-                    "REGION {:x}-{:x}",
-                    start_address_truncated, end_address_truncated,
-                );
+
                 let privileged_execute_never =
                     (!access.contains(MemoryAccess::EXECUTABLE) as u32) << 4;
                 let attr_indx = 0b0u32 << 1; // FIXME preconfigure MAIR
@@ -124,7 +120,6 @@ impl Mpu for Cpu {
 
                 mpu.rlar
                     .write(end_address_truncated | privileged_execute_never | attr_indx | enable);
-                core::sync::atomic::fence(core::sync::atomic::Ordering::Release);
             };
         });
     }

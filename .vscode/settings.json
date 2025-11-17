@@ -43,5 +43,8 @@
     "RUSTUP_TOOLCHAIN": "nightly",
     "SCRIPTS": "./scripts"
   },
-  "cortex-debug.variableUseNaturalFormat": false
+  "cortex-debug.variableUseNaturalFormat": false,
+  "cSpell.words": [
+    "preconfigure"
+  ]
 }
