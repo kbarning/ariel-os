@@ -11,6 +11,10 @@ use ariel_os::thread::*;
 fn thread_a() {
     // 20003030 -> 20003050
 
+    unsafe {
+        core::ptr::write(0x2000305f as *mut u8, 0x12);
+    }
+
     recursion(0);
 
     for _ in 0..1000 {
