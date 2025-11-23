@@ -115,7 +115,8 @@ impl Mpu for Cpu {
                 let end_address_truncated = (*range.end() as u32) & !0b1_1111; // Only bit 31 to 5 are used for limit address
                 info!(
                     "REGION {:x}-{:x}",
-                    start_address_truncated, end_address_truncated,
+                    start_address_truncated,
+                    end_address_truncated | 0b1_1111,
                 );
                 let privileged_execute_never =
                     (!access.contains(MemoryAccess::EXECUTABLE) as u32) << 4;

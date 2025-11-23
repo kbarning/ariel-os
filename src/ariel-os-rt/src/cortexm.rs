@@ -31,6 +31,15 @@ pub fn ipsr_isr_number_to_str(isr_number: usize) -> &'static str {
 #[allow(non_snake_case)]
 #[allow(unsafe_op_in_unsafe_fn)]
 #[exception]
+unsafe fn SVCall() {
+    let psp = cortex_m::register::psp::read();
+    let svc_number = core::ptr::read((psp - 1) as *const u8);
+    info!("Hello World called: {:x}", svc_number);
+}
+
+#[allow(non_snake_case)]
+#[allow(unsafe_op_in_unsafe_fn)]
+#[exception]
 unsafe fn MemoryManagement() -> ! {
     info!("Memory protection unit has called the MemoryManagement handler, reason: ");
 

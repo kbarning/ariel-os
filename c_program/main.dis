@@ -1,0 +1,9 @@
+
+main.o:     file format elf32-littlearm
+
+
+Disassembly of section .text:
+
+00000000 <entry>:
+   0:	dfcc      	svc	204	@ 0xcc
+   2:	e7fe      	b.n	2 <entry+0x2>
