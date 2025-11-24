@@ -89,6 +89,11 @@ impl Mpu for Cpu {
                 const OUTER_NON_CACHEABLE: u32 = 0b0100 << 4;
                 const INNER_NON_CACHEABLE: u32 = 0b0100;
 
+                // Disable the region before changing
+                cortex_m::asm::dmb(); // Recommended
+
+                mpu.rlar.write(0b0);
+
                 // FIXME disable caching for now because of unwanted side effects
                 mpu.mair[0].write(INNER_NON_CACHEABLE | OUTER_NON_CACHEABLE);
 
