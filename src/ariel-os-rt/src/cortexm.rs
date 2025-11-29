@@ -1,4 +1,6 @@
 #![expect(unsafe_code)]
+use core::arch::global_asm;
+
 use ariel_os_debug::log::info;
 
 use cortex_m::{self as _, Peripherals};
@@ -28,13 +30,41 @@ pub fn ipsr_isr_number_to_str(isr_number: usize) -> &'static str {
     }
 }
 
-#[allow(non_snake_case)]
-#[allow(unsafe_op_in_unsafe_fn)]
-#[exception]
-unsafe fn SVCall() {
-    let psp = cortex_m::register::psp::read();
-    let svc_number = core::ptr::read((psp - 1) as *const u8);
-    info!("Hello World called: {:x}", svc_number);
+global_asm!(
+    "
+    .thumb_func
+    .global SVCall
+    SVCall:
+        // This call is always invoked from thread mode, so we don't need to check which stack pointer was in use
+        mrs r0, psp
+        bl {syscall}
+        // https://developer.arm.com/documentation/107706/0100/Exceptions-and-interrupts-overview/EXC-RETURN
+        movw LR, #0xFFFD
+        movt LR, #0xFFFF
+        bx lr
+    ",
+    syscall = sym syscall,
+);
+
+unsafe extern "C" fn syscall(svc_args: *const u32) {
+    // https://developer.arm.com/documentation/107706/0100/System-exceptions/Supervisor-Call---SVC?lang=en
+    let svc_number = unsafe {
+        let pc = core::ptr::read(svc_args.offset(6));
+        core::ptr::read((pc - 2) as *const u8)
+    };
+    match svc_number {
+        0 => hello_world(),
+        1 => goodby_world(),
+        _ => panic!("Unknown syscall {:x} invoked!", svc_number),
+    }
+}
+
+fn hello_world() {
+    info!("Hallo World Invoked!");
+}
+
+fn goodby_world() {
+    info!("Goodby World Invoked!");
 }
 
 #[allow(non_snake_case)]

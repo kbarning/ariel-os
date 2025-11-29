@@ -1,5 +1,4 @@
 void entry() {
-  asm("svc 0xcc");
-  while (1) {
-  }
+  asm("svc 0x00"); // Call hello world
+  asm("svc 0x01"); // Call goodby world
 }
