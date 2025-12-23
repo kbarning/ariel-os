@@ -1,5 +1,5 @@
-use ariel_os_debug::log::{self, info};
 #![expect(unsafe_code)]
+use ariel_os_debug::log::info;
 
 use cortex_m::{self as _, Peripherals};
 use cortex_m_rt::{__RESET_VECTOR, ExceptionFrame, entry, exception};
@@ -32,38 +32,40 @@ pub fn ipsr_isr_number_to_str(isr_number: usize) -> &'static str {
 #[allow(unsafe_op_in_unsafe_fn)]
 #[exception]
 unsafe fn MemoryManagement() -> ! {
-    use core::arch::asm;
+    info!("Memory protection unit has called the MemoryManagement handler, reason: ");
 
     let cfsr: u32 = core::ptr::read_volatile(0xE000ED28 as *const u32);
     let mmfsr = (cfsr & 0xFF) as u8;
 
     if mmfsr & (1 << 0) != 0 {
-        info!(" - Instruction Access Violation (IACCVIOL)");
+        info!("Instruction Access Violation (IACCVIOL)");
     }
     if mmfsr & (1 << 1) != 0 {
-        info!(" - Data Access Violation (DACCVIOL)");
+        info!("Data Access Violation (DACCVIOL)");
     }
     if mmfsr & (1 << 3) != 0 {
-        info!(" - MemManage Fault on Unstacking (MUNSTKERR)");
+        info!("Fault on Unstacking (MUNSTKERR)");
     }
     if mmfsr & (1 << 4) != 0 {
-        info!(" - MemManage Fault on Stacking (MSTKERR)");
+        info!("Fault on Stacking (MSTKERR)");
     }
     if mmfsr & (1 << 5) != 0 {
-        info!(" - MemManage Fault on Lazy FP State Preservation (MLSPERR)");
+        info!("Fault on Lazy FP State Preservation (MLSPERR)");
     }
 
     if mmfsr & (1 << 7) != 0 {
         let peripherals = unsafe { Peripherals::steal() };
         let fault_addr = peripherals.SCB.mmfar.read();
-        info!(" - Fault Address (MMFAR): 0x{:08X}", fault_addr);
+        info!("Fault Address (MMFAR): 0x{:08X}", fault_addr);
     } else {
-        info!(" - Fault Address (MMFAR) not valid");
+        info!("Fault Address (MMFAR) not valid");
     }
 
     ariel_os_debug::exit(ariel_os_debug::ExitCode::FAILURE);
 
-    loop {}
+    loop {
+        core::hint::spin_loop();
+    }
 }
 
 /// Extra verbose Cortex-M HardFault handler
@@ -78,7 +80,6 @@ unsafe fn MemoryManagement() -> ! {
 #[exception]
 unsafe fn HardFault(ef: &ExceptionFrame) -> ! {
     use core::arch::asm;
-    asm!("bkpt");
 
     let mode_str = "Kernel";
 

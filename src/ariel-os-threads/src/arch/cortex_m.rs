@@ -337,7 +337,18 @@ unsafe extern "C" fn sched() -> u64 {
 
             #[cfg(feature = "mpu")]
             {
-                let stack_range = next.stack_lowest..next.stack_highest;
+                use portable_atomic::AtomicBool;
+
+                static IS_SETUP: AtomicBool = AtomicBool::new(false);
+
+                unsafe {
+                    if !IS_SETUP.load(core::sync::atomic::Ordering::SeqCst) {
+                        ariel_os_mpu::enable_mpu();
+                        IS_SETUP.store(true, core::sync::atomic::Ordering::SeqCst);
+                    }
+                }
+
+                let stack_range = next.stack_lowest..=next.stack_highest;
                 ariel_os_mpu::context_switch(stack_range);
             }
 

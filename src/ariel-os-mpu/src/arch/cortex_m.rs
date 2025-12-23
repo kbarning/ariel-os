@@ -1,6 +1,8 @@
+#![expect(unsafe_code)]
+
 use crate::{Mpu, MpuRegionUsage};
 use ariel_os_debug::log::info;
-use cortex_m::{self as _, Peripherals, peripheral::scb::SystemHandler};
+use cortex_m::{self as _, Peripherals};
 
 use crate::arch::MemoryAccess;
 
@@ -13,51 +15,38 @@ impl Mpu for Cpu {
     const N_REGIONS: usize = 8; // ARM v8m supports 8 regions
 
     fn init() {
-        // Configure the program data and stack of the OS itself
+        critical_section::with(|_| {
+            const FLASH_BEGIN: usize = 0x800_0000; // FIXME hardcoded for stm32 at the moment
+            const FLASH_END: usize = FLASH_BEGIN + 512 * 1024; // 512k length according to memory.x
 
-        const FLASH_BEGIN: usize = 0x800_0000; // FIXME hardcoded for stm32 at the moment
-        const FLASH_END: usize = FLASH_BEGIN + 512 * 1024; // 512k length according to memory.x
+            // Configure flash executable data
+            // For safety, we assign the binary executable data the second highest region, because should some overlapping happen, the highest region of the stack should be preferred to prevent shell code execution
+            Self::configure_region(
+                FLASH_BEGIN..=FLASH_END,
+                Self::N_REGIONS - MpuRegionUsage::Flash as usize,
+                MemoryAccess::EXECUTABLE | MemoryAccess::READABLE,
+            );
 
-        // Configure flash executable data
-        // For safety, we assign the binary executable data the second highest region, because should some overlapping happen, the highest region of the stack should be preferred to prevent shell code execution
-        Self::configure_region(
-            FLASH_BEGIN..FLASH_END,
-            Self::N_REGIONS - MpuRegionUsage::FLASH as usize,
-            MemoryAccess::EXECUTABLE | MemoryAccess::READABLE,
-        );
+            const PERIPHERALS_BEGIN: usize = 0x4000_0000; // FIXME hardcoded for stm32 at the moment
+            const PERIPHERALS_END: usize = 0x4FFF_FFFF;
 
-        const PERIPHERALS_BEGIN: usize = 0x4000_0000; // FIXME hardcoded for stm32 at the moment
-        const PERIPHERALS_END: usize = 0x4FFF_FFFF;
+            // Configure peripherals memory
+            Self::configure_region(
+                PERIPHERALS_BEGIN..=PERIPHERALS_END,
+                Self::N_REGIONS - MpuRegionUsage::Peripherals as usize,
+                MemoryAccess::WRITEABLE | MemoryAccess::READABLE,
+            );
 
-        // Configure peripherals memory
-        Self::configure_region(
-            PERIPHERALS_BEGIN..PERIPHERALS_END,
-            Self::N_REGIONS - MpuRegionUsage::PERIPHERALS as usize,
-            MemoryAccess::WRITEABLE | MemoryAccess::READABLE,
-        );
-
-        // FIXME get the regions from the linker file
-        const RAM_BEGIN: usize = 0x2000_0000;
-        const RAM_END: usize = 0x3fff_ffff;
-
-        // Configure the stack data in ram
-        Self::configure_region(
-            RAM_BEGIN..RAM_END,
-            Self::N_REGIONS - MpuRegionUsage::OS_STACK as usize,
-            MemoryAccess::READABLE | MemoryAccess::WRITEABLE,
-        );
-
-        unsafe {
-            const MEMFAULTENA: u32 = 0b1 << 16;
-            let mut peripherals = Peripherals::steal();
-            peripherals
-                .SCB
-                .set_priority(SystemHandler::MemoryManagement, 0xFE); // FIXEM higher priority then PendSv?
-            peripherals.SCB.shcsr.modify(|reg| reg | MEMFAULTENA); // Enable MEMFAULTENA so that the MEMFAULT handler will be called on MPU exception
-        }
-
-        // Configuration done, enable MPU
-        Self::enable();
+            unsafe {
+                const MEMFAULTENA: u32 = 0b1 << 16;
+                let mut peripherals = Peripherals::steal();
+                peripherals.SCB.set_priority(
+                    cortex_m::peripheral::scb::SystemHandler::MemoryManagement,
+                    0xFE,
+                ); // FIXEM higher priority then PendSv?
+                peripherals.SCB.shcsr.modify(|reg| reg | MEMFAULTENA); // Enable MEMFAULTENA so that the MEMFAULT handler will be called on MPU exception
+            }
+        });
     }
 
     fn enable() {
@@ -66,12 +55,10 @@ impl Mpu for Cpu {
                 // The MPU should be enabled only in a critical section according to the Armv8-M Memory Model and Memory Protection manual
                 let mpu = { &*cortex_m::peripheral::MPU::PTR };
                 // We enable the MPU by setting the ENABLE bit in the ctrl register
-                // We do not set the PRIVDEFENA flag, because ariel-os is always running in privileged mode
-                // And we explicitly don't allow privileged code to use any kind of not configured
-                // Memory. Also we don't set the HFNMIENA flag, so that the MPU is not active in a NMI handler
+                // We dont set the PRIVDEFENA flag, so every access to a non configured page is prohibited
+                // Also we don't set the HFNMIENA flag, so that the MPU is not active in a NMI handler
                 const ENABLE: u32 = 0b1;
-                const PRIVDEFENA: u32 = 0b100;
-                mpu.ctrl.write(ENABLE | PRIVDEFENA); // Enable MPU
+                mpu.ctrl.write(ENABLE); // Enable MPU
             }
         });
     }
@@ -84,12 +71,11 @@ impl Mpu for Cpu {
         });
     }
 
-    fn configure_region(range: core::ops::Range<usize>, region_n: usize, access: MemoryAccess) {
-        info!(
-            "Configuring region {} from {:x}-{:x}",
-            region_n, range.start, range.end
-        );
-
+    fn configure_region(
+        range: core::ops::RangeInclusive<usize>,
+        region_n: usize,
+        access: MemoryAccess,
+    ) {
         // Maybe be called from another critical section in sched(), but it is safe to do nested critical sections
         // It will be optimized to no-op
         critical_section::with(|_| {
@@ -100,6 +86,11 @@ impl Mpu for Cpu {
                 const OUTER_NON_CACHEABLE: u32 = 0b0100 << 4;
                 const INNER_NON_CACHEABLE: u32 = 0b0100;
 
+                // Disable the region before changing
+                cortex_m::asm::dmb(); // Recommended
+
+                mpu.rlar.write(0b0);
+
                 // FIXME disable caching for now because of unwanted side effects
                 mpu.mair[0].write(INNER_NON_CACHEABLE | OUTER_NON_CACHEABLE);
 
@@ -107,7 +98,7 @@ impl Mpu for Cpu {
                 mpu.rnr.write(region_n as u32);
 
                 //[BASE=31:5|4:3=SH|AP=2:1|XN=0]
-                let start_address_truncated = (range.start as u32) & !0b1_1111; // Only bit 31 to 5 are used for base address
+                let start_address_truncated = (*range.start() as u32) & !0b1_1111; // Only bit 31 to 5 are used for base address
                 let shareability = 0b00u32 << 2; // At the moment, this is disabled
                 let access_permission = if access.contains(MemoryAccess::WRITEABLE) {
                     const READ_WRITE_PRIVILEGED: u32 = 0;
@@ -123,7 +114,11 @@ impl Mpu for Cpu {
                 );
 
                 // [LIMIT=31:5|4=PXN|ATTRIndx=3:1|EN=0]
-                let end_address_truncated = (range.end as u32) & !0b1_1111; // Only bit 31 to 5 are used for limit address
+                let end_address_truncated = (*range.end() as u32) & !0b1_1111; // Only bit 31 to 5 are used for limit address
+                info!(
+                    "REGION {:x}-{:x}",
+                    start_address_truncated, end_address_truncated,
+                );
                 let privileged_execute_never =
                     (!access.contains(MemoryAccess::EXECUTABLE) as u32) << 4;
                 let attr_indx = 0b0u32 << 1; // FIXME preconfigure MAIR

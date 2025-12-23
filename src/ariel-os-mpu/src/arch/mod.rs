@@ -13,7 +13,11 @@ pub trait Mpu {
     fn init();
     fn enable();
     fn disable();
-    fn configure_region(range: core::ops::Range<usize>, region_n: usize, access: MemoryAccess);
+    fn configure_region(
+        range: core::ops::RangeInclusive<usize>,
+        region_n: usize,
+        access: MemoryAccess,
+    );
 }
 
 cfg_if::cfg_if! {
