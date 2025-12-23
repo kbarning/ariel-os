@@ -24,9 +24,9 @@ pub fn context_switch(stack_begin: usize) {
     const PAGESIZE: usize = 32;
 
     let redzone_range = if truncated_start == stack_begin {
-        stack_begin..=stack_begin.saturating_add(PAGESIZE)
+        stack_begin..=stack_begin
     } else {
-        stack_begin.saturating_add(PAGESIZE)..=stack_begin.saturating_add(PAGESIZE * 2)
+        stack_begin.saturating_add(PAGESIZE)..=stack_begin.saturating_add(PAGESIZE)
     };
 
     // Disallow access, so that we detect a stack overflow with redzone
