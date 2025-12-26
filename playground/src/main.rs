@@ -5,18 +5,23 @@
 use core::mem::MaybeUninit;
 
 use ariel_os::debug::{ExitCode, exit, log::*};
-use ariel_os::thread::*;
+use ariel_os::{mpu, thread::*};
 
 #[ariel_os::thread(autostart)]
-fn sandbox() -> ! {
-    let c_binary = include_bytes!("../../c_program/main.bin");
-    info!("Entering C Function");
+fn sandbox() {
+    // Hier wird der C-Binärcode statisch mithilfe des Übersetzers platziert
+    const C_BINARY: &'static [u8; 6] = include_bytes!("../../c_program/main.bin");
+    let (stack_start, stack_end) = current_stack_limits().unwrap();
+    // Stapelspeicher des aktuellen Threads konfigurieren.
+    mpu::configure_stack(stack_start..=stack_end);
+    mpu::enable();
 
     unsafe {
-        let c_entry: extern "C" fn() = core::mem::transmute(c_binary.as_ptr());
+        // Umwandeln des Array-Typens in ein Funktionszeiger
+        let c_entry: extern "C" fn() = core::mem::transmute(C_BINARY.as_ptr());
+        // Aufruf dieses Funktionszeigers
         c_entry();
     }
-
-    info!("C function has returned");
-    loop {}
+    info!("Die C-Funktion wurde beendet");
+    exit(ExitCode::SUCCESS);
 }

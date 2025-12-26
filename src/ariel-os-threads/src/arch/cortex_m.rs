@@ -333,11 +333,6 @@ unsafe extern "C" fn sched() -> u64 {
 
             let next = scheduler.get_unchecked(next_tid);
 
-            #[cfg(feature = "mpu")]
-            {
-                ariel_os_mpu::context_switch(next.stack_lowest);
-            }
-
             // SAFETY: changing the PSP as part of context switch
             unsafe { cortex_m::register::psp::write(next.data.sp as u32) };
 

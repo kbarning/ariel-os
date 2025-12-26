@@ -38,6 +38,7 @@ global_asm!(
         // This call is always invoked from thread mode, so we don't need to check which stack pointer was in use
         mrs r0, psp
         bl {syscall}
+        // Go back to the thread
         // https://developer.arm.com/documentation/107706/0100/Exceptions-and-interrupts-overview/EXC-RETURN
         movw LR, #0xFFFD
         movt LR, #0xFFFF
@@ -72,8 +73,10 @@ fn goodby_world() {
 #[exception]
 unsafe fn MemoryManagement() -> ! {
     info!("Memory protection unit has called the MemoryManagement handler, reason: ");
+    let peripherals = unsafe { Peripherals::steal() };
 
-    let cfsr: u32 = core::ptr::read_volatile(0xE000ED28 as *const u32);
+    let cfsr: u32 = peripherals.SCB.cfsr.read();
+
     let mmfsr = (cfsr & 0xFF) as u8;
 
     if mmfsr & (1 << 0) != 0 {
@@ -92,13 +95,8 @@ unsafe fn MemoryManagement() -> ! {
         info!("Fault on Lazy FP State Preservation (MLSPERR)");
     }
 
-    if mmfsr & (1 << 7) != 0 {
-        let peripherals = unsafe { Peripherals::steal() };
-        let fault_addr = peripherals.SCB.mmfar.read();
-        info!("Fault Address (MMFAR): 0x{:08X}", fault_addr);
-    } else {
-        info!("Fault Address (MMFAR) not valid");
-    }
+    let fault_addr = peripherals.SCB.mmfar.read();
+    info!("Fault Address (MMFAR): 0x{:08X}", fault_addr);
 
     ariel_os_debug::exit(ariel_os_debug::ExitCode::FAILURE);
 
