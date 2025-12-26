@@ -1,7 +1,7 @@
 #![expect(unsafe_code)]
 use core::arch::global_asm;
 
-use ariel_os_debug::log::info;
+use ariel_os_debug::{ExitCode, exit, log::info};
 
 use cortex_m::{self as _, Peripherals};
 use cortex_m_rt::{__RESET_VECTOR, ExceptionFrame, entry, exception};
@@ -144,7 +144,7 @@ unsafe extern "C" fn memory_manage(svc_args: *const u32) {
         svc_args.addr()
     );
 
-    loop {}
+    exit(ExitCode::FAILURE);
 }
 
 /// Extra verbose Cortex-M HardFault handler

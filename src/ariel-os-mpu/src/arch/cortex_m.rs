@@ -54,7 +54,7 @@ impl Mpu for Cpu {
         unsafe {
             let mpu = { &*cortex_m::peripheral::MPU::PTR };
             // We enable the MPU by setting the ENABLE bit in the ctrl register
-            // We the PRIVDEFENA flag, so that we can use all regions by default and protect the ones we want
+            // We don't set the PRIVDEFENA flag, so that accessing an un-configured region will be forbidden by the MPU
             // Also we don't set the HFNMIENA flag, so that the MPU is not active in a NMI handler
             const ENABLE: u32 = 0b1;
             mpu.ctrl.write(ENABLE); // Enable MPU

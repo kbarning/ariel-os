@@ -13,6 +13,7 @@ fn sandbox() {
     const C_BINARY: &'static [u8; 16] = include_bytes!("../../c_program/main.bin");
     let (stack_start, stack_end) = current_stack_limits().unwrap();
     mpu::configure_stack(stack_start..=stack_end);
+    info!("MPU wird aktiviert");
     mpu::enable();
 
     unsafe {
@@ -22,6 +23,6 @@ fn sandbox() {
         c_entry();
     }
     mpu::disable();
-    info!("Die C-Funktion wurde beendet");
+    info!("Die C-Funktion wurde erfolgreich beendet");
     exit(ExitCode::SUCCESS);
 }
