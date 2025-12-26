@@ -11,10 +11,9 @@ use crate::arch::MemoryAccess;
 
 // FIXME reorder regions priority
 pub enum MpuRegionUsage {
-    Flash = 1,
-    Peripherals = 2,
-    Executable = 3,
-    Stack = 4,
+    Flash = 0,
+    Peripherals = 1,
+    Stack = 2,
 }
 
 pub unsafe fn init_mpu() {
@@ -25,11 +24,15 @@ pub fn enable() {
     <Cpu as Mpu>::enable();
 }
 
+pub fn disable() {
+    <Cpu as Mpu>::disable();
+}
+
 pub fn configure_stack(range: RangeInclusive<usize>) {
     // Disallow access, so that we detect a stack overflow with redzone
     <Cpu as Mpu>::configure_region(
         range,
-        <Cpu as Mpu>::N_REGIONS - MpuRegionUsage::Stack as usize,
+        MpuRegionUsage::Stack as usize,
         MemoryAccess::READABLE | MemoryAccess::WRITEABLE,
     );
 }

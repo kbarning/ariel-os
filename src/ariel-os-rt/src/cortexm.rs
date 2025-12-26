@@ -37,7 +37,9 @@ global_asm!(
     SVCall:
         // This call is always invoked from thread mode, so we don't need to check which stack pointer was in use
         mrs r0, psp
+        bl disable_mpu
         bl {syscall}
+        bl enable_mpu
         // Go back to the thread
         // https://developer.arm.com/documentation/107706/0100/Exceptions-and-interrupts-overview/EXC-RETURN
         movw LR, #0xFFFD
@@ -68,10 +70,47 @@ fn goodby_world() {
     info!("Goodby World Invoked!");
 }
 
-#[allow(non_snake_case)]
-#[allow(unsafe_op_in_unsafe_fn)]
-#[exception]
-unsafe fn MemoryManagement() -> ! {
+global_asm!(
+    "
+    .thumb_func
+    .global enable_mpu
+    enable_mpu:
+        // Enable MPU
+        ldr r1, MPU_CTRL
+        mov r2, #1
+        str r2, [r1]
+        dsb
+        isb
+    bx lr
+
+    .global disable_mpu
+    disable_mpu:
+        // Disable MPU
+        ldr r1, MPU_CTRL
+        mov r2, #0
+        str r2, [r1]
+        dsb
+        isb
+    bx lr
+
+    MPU_CTRL:
+        .word 0xE000ED94
+    ",
+);
+
+global_asm!(
+    "
+    .thumb_func
+    .global MemoryManagement
+    MemoryManagement:
+        bl disable_mpu
+        mrs r0, msp
+        b {memory_manage}
+    ",
+    memory_manage = sym memory_manage,
+);
+
+unsafe extern "C" fn memory_manage(svc_args: *const u32) {
     info!("Memory protection unit has called the MemoryManagement handler, reason: ");
     let peripherals = unsafe { Peripherals::steal() };
 
@@ -96,13 +135,16 @@ unsafe fn MemoryManagement() -> ! {
     }
 
     let fault_addr = peripherals.SCB.mmfar.read();
-    info!("Fault Address (MMFAR): 0x{:08X}", fault_addr);
 
-    ariel_os_debug::exit(ariel_os_debug::ExitCode::FAILURE);
+    let pc = unsafe { core::ptr::read(svc_args.offset(6)) };
+    info!(
+        "Fault Address (MMFAR): 0x{:08X}\nPC was 0x{:08X}\nSP was 0x{:08X}",
+        fault_addr,
+        pc,
+        svc_args.addr()
+    );
 
-    loop {
-        core::hint::spin_loop();
-    }
+    loop {}
 }
 
 /// Extra verbose Cortex-M HardFault handler
@@ -157,10 +199,12 @@ unsafe fn HardFault(ef: &ExceptionFrame) -> ! {
     let thumb_bit = ((xpsr >> 24) & 0x1) == 1;
     let exception_number = (xpsr & 0x1ff) as usize;
 
-    info!(
-        "CFSR NUMBER {:0b} at {:x} from {}",
-        cfsr, mmfar, exception_number
-    );
+    let peripherals = unsafe { Peripherals::steal() };
+
+    let cfsr: u32 = peripherals.SCB.cfsr.read();
+
+    let fault_addr = peripherals.SCB.mmfar.read();
+    info!("Fault Address (MMFAR): 0x{:08X}", fault_addr);
 
     panic!(
         "{} HardFault.\r\n\

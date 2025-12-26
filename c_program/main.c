@@ -1,4 +1,4 @@
 void entry() {
-  asm("svc 0x00"); // Call hello world
-  asm("svc 0x01"); // Call goodby world
+  unsigned int* ptr = (unsigned int*) 0x2ffffff;
+  *ptr = 0xabcd;
 }

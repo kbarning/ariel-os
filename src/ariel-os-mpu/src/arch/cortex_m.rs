@@ -16,14 +16,14 @@ impl Mpu for Cpu {
 
     fn init() {
         critical_section::with(|_| {
-            const FLASH_BEGIN: usize = 0x800_0000; // FIXME hardcoded for stm32 at the moment
-            const FLASH_END: usize = FLASH_BEGIN + 512 * 1024; // 512k length according to memory.x
+            const FLASH_BEGIN: usize = 0x0800_0000; // FIXME hardcoded for stm32 at the moment
+            const FLASH_END: usize = 0x0808_0000; // 512k length according to memory.x
 
             // Configure flash executable data
             // For safety, we assign the binary executable data the second highest region, because should some overlapping happen, the highest region of the stack should be preferred to prevent shell code execution
             Self::configure_region(
                 FLASH_BEGIN..=FLASH_END,
-                Self::N_REGIONS - MpuRegionUsage::Flash as usize,
+                MpuRegionUsage::Flash as usize,
                 MemoryAccess::EXECUTABLE | MemoryAccess::READABLE,
             );
 
@@ -33,45 +33,40 @@ impl Mpu for Cpu {
             // Configure peripherals memory
             Self::configure_region(
                 PERIPHERALS_BEGIN..=PERIPHERALS_END,
-                Self::N_REGIONS - MpuRegionUsage::Peripherals as usize,
+                MpuRegionUsage::Peripherals as usize,
                 MemoryAccess::WRITEABLE | MemoryAccess::READABLE,
             );
 
             unsafe {
                 const MEMFAULTENA: u32 = 0b1 << 16;
                 let mut peripherals = Peripherals::steal();
+                // MemoryManagement has a higher priority then PendSV, because PendSV should always has the lowest
                 peripherals.SCB.set_priority(
                     cortex_m::peripheral::scb::SystemHandler::MemoryManagement,
                     0xFE,
-                ); // FIXEM higher priority then PendSv?
+                );
                 peripherals.SCB.shcsr.modify(|reg| reg | MEMFAULTENA); // Enable MEMFAULTENA so that the MEMFAULT handler will be called on MPU exception
             }
-            // Configuration done, enable MPU
-            Self::enable();
         });
     }
 
     fn enable() {
-        critical_section::with(|_| {
-            unsafe {
-                // The MPU should be enabled only in a critical section according to the Armv8-M Memory Model and Memory Protection manual
-                let mpu = { &*cortex_m::peripheral::MPU::PTR };
-                // We enable the MPU by setting the ENABLE bit in the ctrl register
-                // We the PRIVDEFENA flag, so that we can use all regions by default and protect the ones we want
-                // Also we don't set the HFNMIENA flag, so that the MPU is not active in a NMI handler
-                const ENABLE: u32 = 0b1;
-                const PRIVDEFENA: u32 = 0b100;
-                mpu.ctrl.write(ENABLE | PRIVDEFENA); // Enable MPU
-            }
-        });
+        unsafe {
+            let mpu = { &*cortex_m::peripheral::MPU::PTR };
+            // We enable the MPU by setting the ENABLE bit in the ctrl register
+            // We the PRIVDEFENA flag, so that we can use all regions by default and protect the ones we want
+            // Also we don't set the HFNMIENA flag, so that the MPU is not active in a NMI handler
+            const ENABLE: u32 = 0b1;
+            mpu.ctrl.write(ENABLE); // Enable MPU
+            cortex_m::asm::dsb(); // Recommended by Arm
+            cortex_m::asm::isb();
+        }
     }
     fn disable() {
-        critical_section::with(|_| {
-            unsafe {
-                let mpu = { &*cortex_m::peripheral::MPU::PTR };
-                mpu.ctrl.write(0x00); // Disable MPU
-            }
-        });
+        unsafe {
+            let mpu = { &*cortex_m::peripheral::MPU::PTR };
+            mpu.ctrl.write(0x00); // Disable MPU
+        }
     }
 
     fn configure_region(
@@ -79,54 +74,46 @@ impl Mpu for Cpu {
         region_n: usize,
         access: MemoryAccess,
     ) {
-        // Maybe be called from another critical section in sched(), but it is safe to do nested critical sections
-        // It will be optimized to no-op
-        critical_section::with(|_| {
-            core::sync::atomic::fence(core::sync::atomic::Ordering::Acquire);
-            unsafe {
-                let mpu = { &*cortex_m::peripheral::MPU::PTR };
+        unsafe {
+            let mpu = { &*cortex_m::peripheral::MPU::PTR };
 
-                const OUTER_NON_CACHEABLE: u32 = 0b0100 << 4;
-                const INNER_NON_CACHEABLE: u32 = 0b0100;
+            const OUTER_NON_CACHEABLE: u32 = 0b0100 << 4;
+            const INNER_NON_CACHEABLE: u32 = 0b0100;
 
-                // FIXME disable caching for now because of unwanted side effects
-                mpu.mair[0].write(INNER_NON_CACHEABLE | OUTER_NON_CACHEABLE);
+            // FIXME disable caching for now because of unwanted side effects
+            mpu.mair[0].write(INNER_NON_CACHEABLE | OUTER_NON_CACHEABLE);
 
-                // Select MPU region number
-                mpu.rnr.write(region_n as u32);
+            // Select MPU region number
+            mpu.rnr.write(region_n as u32);
 
-                //[BASE=31:5|4:3=SH|AP=2:1|XN=0]
-                let start_address_truncated = (*range.start() as u32) & !0b1_1111; // Only bit 31 to 5 are used for base address
-                let shareability = 0b00u32 << 2; // At the moment, this is disabled
-                let access_permission = if access.contains(MemoryAccess::WRITEABLE) {
-                    const READ_WRITE_PRIVILEGED: u32 = 0;
-                    READ_WRITE_PRIVILEGED
-                } else {
-                    const READ_ONLY_PRIVILEGED: u32 = 0b10 << 1;
-                    READ_ONLY_PRIVILEGED
-                };
-                let execute_never = (!access.contains(MemoryAccess::EXECUTABLE)) as u32;
-
-                mpu.rbar.write(
-                    start_address_truncated | shareability | access_permission | execute_never,
-                );
-
-                // [LIMIT=31:5|4=PXN|ATTRIndx=3:1|EN=0]
-                let end_address_truncated = (*range.end() as u32) & !0b1_1111; // Only bit 31 to 5 are used for limit address
-                info!(
-                    "REGION {:x}-{:x}",
-                    start_address_truncated,
-                    end_address_truncated | 0b1_1111,
-                );
-                let privileged_execute_never =
-                    (!access.contains(MemoryAccess::EXECUTABLE) as u32) << 4;
-                let attr_indx = 0b0u32 << 1; // FIXME preconfigure MAIR
-                let enable = 0b1u32;
-
-                mpu.rlar
-                    .write(end_address_truncated | privileged_execute_never | attr_indx | enable);
-                core::sync::atomic::fence(core::sync::atomic::Ordering::Release);
+            //[BASE=31:5|4:3=SH|AP=2:1|XN=0]
+            let start_address_truncated = (*range.start() as u32) & !0b1_1111; // Only bit 31 to 5 are used for base address
+            let shareability = 0b00u32 << 2; // Not used on single-core systems
+            let access_permission = if access.contains(MemoryAccess::WRITEABLE) {
+                const READ_WRITE_PRIVILEGED: u32 = 0;
+                READ_WRITE_PRIVILEGED
+            } else {
+                const READ_ONLY_PRIVILEGED: u32 = 0b10 << 1;
+                READ_ONLY_PRIVILEGED
             };
-        });
+            // Ariel OS has no unprivileged code, so this bit is irrelevant
+            let execute_never = 0b0;
+            mpu.rbar
+                .write(start_address_truncated | shareability | access_permission | execute_never);
+
+            // [LIMIT=31:5|4=PXN|ATTRIndx=3:1|EN=0]
+            let end_address_truncated = (*range.end() as u32) & !0b1_1111; // Only bit 31 to 5 are used for limit address
+            info!(
+                "REGION {:08x}-{:08x}",
+                start_address_truncated,
+                end_address_truncated | 0b1_1111,
+            );
+            let privileged_execute_never = (!access.contains(MemoryAccess::EXECUTABLE) as u32) << 4;
+            let attr_indx = 0b0u32 << 1;
+            let enable = 0b1u32;
+
+            mpu.rlar
+                .write(end_address_truncated | privileged_execute_never | attr_indx | enable);
+        };
     }
 }

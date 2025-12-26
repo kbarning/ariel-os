@@ -10,9 +10,8 @@ use ariel_os::{mpu, thread::*};
 #[ariel_os::thread(autostart)]
 fn sandbox() {
     // Hier wird der C-Binärcode statisch mithilfe des Übersetzers platziert
-    const C_BINARY: &'static [u8; 6] = include_bytes!("../../c_program/main.bin");
+    const C_BINARY: &'static [u8; 16] = include_bytes!("../../c_program/main.bin");
     let (stack_start, stack_end) = current_stack_limits().unwrap();
-    // Stapelspeicher des aktuellen Threads konfigurieren.
     mpu::configure_stack(stack_start..=stack_end);
     mpu::enable();
 
@@ -22,6 +21,7 @@ fn sandbox() {
         // Aufruf dieses Funktionszeigers
         c_entry();
     }
+    mpu::disable();
     info!("Die C-Funktion wurde beendet");
     exit(ExitCode::SUCCESS);
 }
