@@ -4,54 +4,23 @@
 
 use core::mem::MaybeUninit;
 
-use ariel_os::debug::{ExitCode, exit, log::*};
-use ariel_os::thread::*;
+use ariel_os::{
+    debug::{ExitCode, exit, log::*},
+    thread::current_stack_limits,
+};
 
 #[allow(unconditional_recursion)]
 fn recursion() {
+    // Ein Byte auf dem Stapelspeicher allokieren
     let arr: MaybeUninit<[u8; 1]> = MaybeUninit::uninit();
+    // Verhindert, das diese Variable von dem Übersetzter wegoptimiert wird
     core::hint::black_box(arr);
+    // Rekursiver Aufruf
     recursion();
 }
 
 #[ariel_os::thread(autostart)]
-fn thread_a() {
-    for _ in 0..1000 {
-        info!("Thread A Looping 1");
-    }
-
-    yield_same();
-
-    for _ in 0..10 {
-        info!("Thread A Looping 2");
-    }
-
-    yield_same();
-}
-
-#[ariel_os::thread(autostart)]
-fn thread_b() {
-    info!(
-        "Thread B Running at address {:x} and sp {:x}",
-        cortex_m::register::pc::read(),
-        cortex_m::register::psp::read()
-    );
-
-    // unsafe {
-    //     core::ptr::write(0x2000387f as *mut u8, 0x12);
-    // }
-
+fn main() {
+    info!("Stack start: {:x}", current_stack_limits().unwrap().0,);
     recursion();
-
-    for _ in 0..100 {
-        info!("Thread B Looping 1");
-    }
-
-    yield_same();
-
-    for _ in 0..10 {
-        info!("Thread B Looping 2");
-    }
-
-    exit(ExitCode::SUCCESS);
 }
