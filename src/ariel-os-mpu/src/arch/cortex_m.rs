@@ -14,45 +14,45 @@ impl Mpu for Cpu {
     const N_REGIONS: usize = 8; // ARM v8m supports 8 regions
 
     fn init() {
-        critical_section::with(|_| {
-            const FLASH_BEGIN: usize = 0x0800_0000; // FIXME hardcoded for stm32 at the moment
-            const FLASH_END: usize = 0x0807_FFFF; // 512k length according to memory.x
+        const FLASH_BEGIN: usize = 0x0800_0000; // FIXME hardcoded for stm32 at the moment
+        const FLASH_END: usize = 0x0807_FFFF; // 512k length according to memory.x
 
-            // Flash-Region konfigurieren
-            // Diese ist ausführbar und lesbar, da der Prozessor von hier aus den Binärcode läd und ausführt
-            Self::configure_region(
-                FLASH_BEGIN..=FLASH_END,
-                MpuRegionUsage::Flash as usize,
-                MemoryAccess::EXECUTABLE | MemoryAccess::READABLE,
+        // Flash-Region konfigurieren
+        // Diese ist ausführbar und lesbar, da der Prozessor von hier aus den Binärcode läd und ausführt
+        Self::configure_region(
+            FLASH_BEGIN..=FLASH_END,
+            MpuRegionUsage::Flash as usize,
+            MemoryAccess::EXECUTABLE | MemoryAccess::READABLE,
+        );
+
+        const PERIPHERALS_BEGIN: usize = 0x4000_0000;
+        const PERIPHERALS_END: usize = 0x4FFF_FFFE;
+
+        // Peripherie-Region konfigurieren
+        // Diese Region ist les- und beschreibbar, damit Daten von Peripheriegeräten gelesen und geschrieben werden können
+        Self::configure_region(
+            PERIPHERALS_BEGIN..=PERIPHERALS_END,
+            MpuRegionUsage::Peripherals as usize,
+            MemoryAccess::WRITEABLE | MemoryAccess::READABLE,
+        );
+
+        unsafe {
+            const MEMFAULTENA: u32 = 0b1 << 16;
+            let mut peripherals = Peripherals::steal();
+            // Der Handler MemoryManagement hat eine höhere Priorität als der Handler PendSV
+            // PendSV benötigt die niedrigste Priorität im System.
+            // So kann im Falle einer Zugriffsverletzung innerhalb von PendSV
+            // MemoryManagement aufgerufen werden und so eine Fehlermeldung ausgeben
+            peripherals.SCB.set_priority(
+                cortex_m::peripheral::scb::SystemHandler::MemoryManagement,
+                0xFE,
             );
-
-            const PERIPHERALS_BEGIN: usize = 0x4000_0000;
-            const PERIPHERALS_END: usize = 0x4FFF_FFFE;
-
-            // Peripherie-Region konfigurieren
-            // Diese Region ist les- und beschreibbar, damit Daten von Peripheriegeräten gelesen und geschrieben werden können
-            Self::configure_region(
-                PERIPHERALS_BEGIN..=PERIPHERALS_END,
-                MpuRegionUsage::Peripherals as usize,
-                MemoryAccess::WRITEABLE | MemoryAccess::READABLE,
-            );
-
-            unsafe {
-                const MEMFAULTENA: u32 = 0b1 << 16;
-                let mut peripherals = Peripherals::steal();
-                // Der Handler MemoryManagement hat eine höhere Priorität als der Handler PendSV
-                // PendSV benötigt die niedrigste Priorität im System.
-                // So kann im Falle einer Zugriffsverletzung innerhalb von PendSV
-                // MemoryManagement aufgerufen werden und so eine Fehlermeldung ausgeben
-                peripherals.SCB.set_priority(
-                    cortex_m::peripheral::scb::SystemHandler::MemoryManagement,
-                    0xFE,
-                );
-                // Wenn eine Zugriffsverletzung ausgelöst wird, wird der
-                // Handler MemoryManagement aufgerufen und kein Hardfault ausgelöst
-                peripherals.SCB.shcsr.modify(|reg| reg | MEMFAULTENA);
-            }
-        });
+            // Wenn eine Zugriffsverletzung ausgelöst wird, wird der
+            // Handler MemoryManagement aufgerufen und kein Hardfault ausgelöst
+            peripherals.SCB.shcsr.modify(|reg| reg | MEMFAULTENA);
+        }
+        // MPU einschalten
+        Self::enable();
     }
 
     fn enable() {
@@ -65,7 +65,7 @@ impl Mpu for Cpu {
             // innerhab des Handler NMI nicht aktiv wird
             const ENABLE: u32 = 0b1;
             const PRIVDEFENA: u32 = 0b1 << 2;
-            mpu.ctrl.write(ENABLE);
+            mpu.ctrl.write(ENABLE | PRIVDEFENA);
             // Arm empfiehlt das Auslösen einer Datensynchronisationsbarriere
             // sowie das aus Auslösen einer Anweisungsbarriere, damit die MPU erste
             // Eingeschaltet wird, wenn alle vorherigen Konfigurationen abgeschlossen sind

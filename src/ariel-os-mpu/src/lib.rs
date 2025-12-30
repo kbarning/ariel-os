@@ -32,7 +32,7 @@ pub fn context_switch(stack_begin: usize) {
     // Disallow access, so that we detect a stack overflow with redzone
     <Cpu as Mpu>::configure_region(
         redzone_range,
-        <Cpu as Mpu>::N_REGIONS - MpuRegionUsage::StackRedzone as usize,
-        MemoryAccess::empty(),
+        MpuRegionUsage::StackRedzone as usize,
+        MemoryAccess::READABLE,
     );
 }

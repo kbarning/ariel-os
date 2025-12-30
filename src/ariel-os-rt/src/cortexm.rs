@@ -1,10 +1,12 @@
 #![expect(unsafe_code)]
-use ariel_os_debug::log::info;
+use ariel_os_debug::{ExitCode, exit, log::info};
 
 use cortex_m::{self as _, Peripherals};
 use cortex_m_rt::{__RESET_VECTOR, ExceptionFrame, entry, exception};
 
 use crate::stack::Stack;
+
+use core::arch::global_asm;
 
 // Table 2.5
 // http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0553a/CHDBIBGJ.html
@@ -28,13 +30,42 @@ pub fn ipsr_isr_number_to_str(isr_number: usize) -> &'static str {
     }
 }
 
-#[allow(non_snake_case)]
-#[allow(unsafe_op_in_unsafe_fn)]
-#[exception]
-unsafe fn MemoryManagement() -> ! {
-    info!("Memory protection unit has called the MemoryManagement handler, reason: ");
+global_asm!(
+    "
+    .thumb_func
+    .global disable_mpu
+    disable_mpu:
+        // Disable MPU
+        ldr r1, MPU_CTRL
+        mov r2, #0
+        str r2, [r1]
+        dsb
+        isb
+    bx lr
 
-    let cfsr: u32 = core::ptr::read_volatile(0xE000ED28 as *const u32);
+    MPU_CTRL:
+        .word 0xE000ED94
+    ",
+);
+
+global_asm!(
+    "
+    .thumb_func
+    .global MemoryManagement
+    MemoryManagement:
+        bl disable_mpu
+        mrs r0, msp
+        b {memory_manage}
+    ",
+    memory_manage = sym memory_manage,
+);
+
+unsafe extern "C" fn memory_manage(svc_args: *const u32) {
+    info!("Memory protection unit has called the MemoryManagement handler, reason: ");
+    let peripherals = unsafe { Peripherals::steal() };
+
+    let cfsr: u32 = peripherals.SCB.cfsr.read();
+
     let mmfsr = (cfsr & 0xFF) as u8;
 
     if mmfsr & (1 << 0) != 0 {
@@ -53,19 +84,17 @@ unsafe fn MemoryManagement() -> ! {
         info!("Fault on Lazy FP State Preservation (MLSPERR)");
     }
 
-    if mmfsr & (1 << 7) != 0 {
-        let peripherals = unsafe { Peripherals::steal() };
-        let fault_addr = peripherals.SCB.mmfar.read();
-        info!("Fault Address (MMFAR): 0x{:08X}", fault_addr);
-    } else {
-        info!("Fault Address (MMFAR) not valid");
-    }
+    let fault_addr = peripherals.SCB.mmfar.read();
 
-    ariel_os_debug::exit(ariel_os_debug::ExitCode::FAILURE);
+    let pc = unsafe { core::ptr::read(svc_args.offset(6)) };
+    info!(
+        "Fault Address (MMFAR): 0x{:08X}\nPC was 0x{:08X}\nSP was 0x{:08X}",
+        fault_addr,
+        pc,
+        svc_args.addr()
+    );
 
-    loop {
-        core::hint::spin_loop();
-    }
+    exit(ExitCode::FAILURE);
 }
 
 /// Extra verbose Cortex-M HardFault handler
@@ -117,6 +146,10 @@ unsafe fn HardFault(ef: &ExceptionFrame) -> ! {
     let ici_it = (((xpsr >> 25) & 0x3) << 6) | ((xpsr >> 10) & 0x3f);
     let thumb_bit = ((xpsr >> 24) & 0x1) == 1;
     let exception_number = (xpsr & 0x1ff) as usize;
+    let peripherals = { cortex_m::Peripherals::steal() };
+    let fault_addr = peripherals.SCB.mmfar.read();
+
+    info!("Fault Address (MMFAR): 0x{:08X}", fault_addr);
 
     panic!(
         "{} HardFault.\r\n\
