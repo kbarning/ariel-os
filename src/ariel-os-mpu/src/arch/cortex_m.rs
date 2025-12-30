@@ -1,7 +1,6 @@
 #![expect(unsafe_code)]
 
 use crate::{Mpu, MpuRegionUsage};
-use ariel_os_debug::log::info;
 use cortex_m::{self as _, Peripherals};
 
 use crate::arch::MemoryAccess;
@@ -17,20 +16,21 @@ impl Mpu for Cpu {
     fn init() {
         critical_section::with(|_| {
             const FLASH_BEGIN: usize = 0x0800_0000; // FIXME hardcoded for stm32 at the moment
-            const FLASH_END: usize = 0x0808_0000; // 512k length according to memory.x
+            const FLASH_END: usize = 0x807_FFFF; // 512k length according to memory.x
 
-            // Configure flash executable data
-            // For safety, we assign the binary executable data the second highest region, because should some overlapping happen, the highest region of the stack should be preferred to prevent shell code execution
+            // Flash-Region konfigurieren
+            // Diese ist ausführbar und lesbar, da der Prozessor von hier aus den Binärcode läd und ausführt
             Self::configure_region(
                 FLASH_BEGIN..=FLASH_END,
                 MpuRegionUsage::Flash as usize,
                 MemoryAccess::EXECUTABLE | MemoryAccess::READABLE,
             );
 
-            const PERIPHERALS_BEGIN: usize = 0x4000_0000; // FIXME hardcoded for stm32 at the moment
-            const PERIPHERALS_END: usize = 0x4FFF_FFFF;
+            const PERIPHERALS_BEGIN: usize = 0x4000_0000;
+            const PERIPHERALS_END: usize = 0x4FFFFFFE;
 
-            // Configure peripherals memory
+            // Peripherie-Region konfigurieren
+            // Diese Region ist les- und beschreibbar, damit Daten von Peripheriegeräten gelesen und geschrieben werden können
             Self::configure_region(
                 PERIPHERALS_BEGIN..=PERIPHERALS_END,
                 MpuRegionUsage::Peripherals as usize,
@@ -40,12 +40,17 @@ impl Mpu for Cpu {
             unsafe {
                 const MEMFAULTENA: u32 = 0b1 << 16;
                 let mut peripherals = Peripherals::steal();
-                // MemoryManagement has a higher priority then PendSV, because PendSV should always has the lowest
+                // Der Handler MemoryManagement hat eine höhere Priorität als der Handler PendSV
+                // PendSV benötigt die niedrigste Priorität im System.
+                // So kann im Falle einer Zugriffsverletzung innerhalb von PendSV
+                // MemoryManagement aufgerufen werden und so eine Fehlermeldung ausgeben
                 peripherals.SCB.set_priority(
                     cortex_m::peripheral::scb::SystemHandler::MemoryManagement,
                     0xFE,
                 );
-                peripherals.SCB.shcsr.modify(|reg| reg | MEMFAULTENA); // Enable MEMFAULTENA so that the MEMFAULT handler will be called on MPU exception
+                // Wenn eine Zugriffsverletzung ausgelöst wird, wird der
+                // Handler MemoryManagement aufgerufen und kein Hardfault ausgelöst
+                peripherals.SCB.shcsr.modify(|reg| reg | MEMFAULTENA);
             }
         });
     }
@@ -53,19 +58,25 @@ impl Mpu for Cpu {
     fn enable() {
         unsafe {
             let mpu = { &*cortex_m::peripheral::MPU::PTR };
-            // We enable the MPU by setting the ENABLE bit in the ctrl register
-            // We don't set the PRIVDEFENA flag, so that accessing an un-configured region will be forbidden by the MPU
-            // Also we don't set the HFNMIENA flag, so that the MPU is not active in a NMI handler
+            // Hier wir die MPU eingeschaltet. Des Weiteren wird das Flag PRIVDEFENA nicht
+            // gesetzt. Dadurch kommt es zu einer Zugriffsverletzung, sollte versucht werden auf einen
+            // Speicherbereich zuzugreifen, welcher nicht konfiguriert wurde.
+            // Außerdem wird das Flag HFNMIENA nicht gesetzt. Dies führt dazu, dass die MPU
+            // innerhab des Handler NMI nicht aktiv wird
             const ENABLE: u32 = 0b1;
-            mpu.ctrl.write(ENABLE); // Enable MPU
-            cortex_m::asm::dsb(); // Recommended by Arm
+            mpu.ctrl.write(ENABLE);
+            // Arm empfiehlt das Auslösen einer Datensynchronisationsbarriere
+            // sowie das aus Auslösen einer Anweisungsbarriere, damit die MPU erste
+            // Eingeschaltet wird, wenn alle vorherigen Konfigurationen abgeschlossen sind
+            cortex_m::asm::dsb();
             cortex_m::asm::isb();
         }
     }
     fn disable() {
         unsafe {
             let mpu = { &*cortex_m::peripheral::MPU::PTR };
-            mpu.ctrl.write(0x00); // Disable MPU
+            // MPU ausschalten
+            mpu.ctrl.write(0x00);
         }
     }
 
@@ -80,15 +91,20 @@ impl Mpu for Cpu {
             const OUTER_NON_CACHEABLE: u32 = 0b0100 << 4;
             const INNER_NON_CACHEABLE: u32 = 0b0100;
 
-            // FIXME disable caching for now because of unwanted side effects
+            // Caching wird im Rahmen dieser Masterarbeit nicht verwendet
             mpu.mair[0].write(INNER_NON_CACHEABLE | OUTER_NON_CACHEABLE);
 
-            // Select MPU region number
+            // Zu konfigurierende Region auswählen
             mpu.rnr.write(region_n as u32);
 
+            // Nur die oberen 27 Bits für die Adressierung werden verwendet.
+            // Die unteren 5 Bits werden automatisch auf null gesetzt.
             //[BASE=31:5|4:3=SH|AP=2:1|XN=0]
-            let start_address_truncated = (*range.start() as u32) & !0b1_1111; // Only bit 31 to 5 are used for base address
-            let shareability = 0b00u32 << 2; // Not used on single-core systems
+            let start_address_truncated = (*range.start() as u32) & !0b1_1111;
+            // Speicher wird nicht geteilt
+            let shareability = 0b00u32 << 2;
+            // In Armv8-M gibt es keine Möglichkeit, Lesezugriffe auf konfigurierten Regionen zu unterbinden
+            // Eine Region kann nur als nur lesbar oder les- und beschreibbar konfiguriert werden
             let access_permission = if access.contains(MemoryAccess::WRITEABLE) {
                 const READ_WRITE_PRIVILEGED: u32 = 0;
                 READ_WRITE_PRIVILEGED
@@ -96,22 +112,24 @@ impl Mpu for Cpu {
                 const READ_ONLY_PRIVILEGED: u32 = 0b10 << 1;
                 READ_ONLY_PRIVILEGED
             };
-            // Ariel OS has no unprivileged code, so this bit is irrelevant
-            let execute_never = 0b0;
-            mpu.rbar
-                .write(start_address_truncated | shareability | access_permission | execute_never);
+            // Da Ariel OS nur im privilegierten Modus ausgeführt wird, ist dieses Bit irrelevant
+            const EXECUTE_NEVER: u32 = 0b1;
 
+            mpu.rbar
+                .write(start_address_truncated | shareability | access_permission | EXECUTE_NEVER);
+
+            // Nur die oberen 27 Bits für die Adressierung werden verwendet.
+            // Die unteren 5 Bits werden automatisch auf eins gesetzt.
             // [LIMIT=31:5|4=PXN|ATTRIndx=3:1|EN=0]
-            let end_address_truncated = (*range.end() as u32) & !0b1_1111; // Only bit 31 to 5 are used for limit address
-            info!(
-                "REGION {:08x}-{:08x}",
-                start_address_truncated,
-                end_address_truncated | 0b1_1111,
-            );
+            let end_address_truncated = (*range.end() as u32) & !0b1_1111;
+
+            // Ausführbarkeit er Region festlegen
             let privileged_execute_never = (!access.contains(MemoryAccess::EXECUTABLE) as u32) << 4;
+            // Always zero indexed, because we do not
             let attr_indx = 0b0u32 << 1;
             let enable = 0b1u32;
 
+            // Das Überwachen der Region durch die MPU aktivieren
             mpu.rlar
                 .write(end_address_truncated | privileged_execute_never | attr_indx | enable);
         };
