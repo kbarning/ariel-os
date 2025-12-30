@@ -79,8 +79,6 @@ unsafe fn MemoryManagement() -> ! {
 #[allow(unsafe_op_in_unsafe_fn)]
 #[exception]
 unsafe fn HardFault(ef: &ExceptionFrame) -> ! {
-    use core::arch::asm;
-
     let mode_str = "Kernel";
 
     let shcsr: u32 = core::ptr::read_volatile(0xE000ED24 as *const u32);
@@ -119,11 +117,6 @@ unsafe fn HardFault(ef: &ExceptionFrame) -> ! {
     let ici_it = (((xpsr >> 25) & 0x3) << 6) | ((xpsr >> 10) & 0x3f);
     let thumb_bit = ((xpsr >> 24) & 0x1) == 1;
     let exception_number = (xpsr & 0x1ff) as usize;
-
-    info!(
-        "CFSR NUMBER {:0b} at {:x} from {}",
-        cfsr, mmfar, exception_number
-    );
 
     panic!(
         "{} HardFault.\r\n\

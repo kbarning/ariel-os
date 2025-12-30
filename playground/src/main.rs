@@ -5,7 +5,7 @@
 use core::mem::MaybeUninit;
 
 use ariel_os::{
-    debug::{ExitCode, exit, log::*},
+    debug::{ExitCode, exit, log::info},
     thread::current_stack_limits,
 };
 
@@ -23,4 +23,5 @@ fn recursion() {
 fn main() {
     info!("Stack start: {:x}", current_stack_limits().unwrap().0,);
     recursion();
+    exit(ExitCode::SUCCESS);
 }
