@@ -9,7 +9,6 @@ use arch::{Cpu, Mpu};
 
 use crate::arch::MemoryAccess;
 
-// FIXME reorder regions priority
 pub enum MpuRegionUsage {
     Flash = 0,
     Peripherals = 1,
@@ -29,7 +28,6 @@ pub fn disable() {
 }
 
 pub fn configure_stack(range: RangeInclusive<usize>) {
-    // Disallow access, so that we detect a stack overflow with redzone
     <Cpu as Mpu>::configure_region(
         range,
         MpuRegionUsage::Stack as usize,

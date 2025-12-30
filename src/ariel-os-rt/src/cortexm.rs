@@ -158,8 +158,6 @@ unsafe extern "C" fn memory_manage(svc_args: *const u32) {
 #[allow(unsafe_op_in_unsafe_fn)]
 #[exception]
 unsafe fn HardFault(ef: &ExceptionFrame) -> ! {
-    use core::arch::asm;
-
     let mode_str = "Kernel";
 
     let shcsr: u32 = core::ptr::read_volatile(0xE000ED24 as *const u32);

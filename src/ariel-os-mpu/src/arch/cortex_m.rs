@@ -16,7 +16,7 @@ impl Mpu for Cpu {
     fn init() {
         critical_section::with(|_| {
             const FLASH_BEGIN: usize = 0x0800_0000; // FIXME hardcoded for stm32 at the moment
-            const FLASH_END: usize = 0x807_FFFF; // 512k length according to memory.x
+            const FLASH_END: usize = 0x0807_FFFF; // 512k length according to memory.x
 
             // Flash-Region konfigurieren
             // Diese ist ausführbar und lesbar, da der Prozessor von hier aus den Binärcode läd und ausführt
@@ -27,7 +27,7 @@ impl Mpu for Cpu {
             );
 
             const PERIPHERALS_BEGIN: usize = 0x4000_0000;
-            const PERIPHERALS_END: usize = 0x4FFFFFFE;
+            const PERIPHERALS_END: usize = 0x4FFF_FFFE;
 
             // Peripherie-Region konfigurieren
             // Diese Region ist les- und beschreibbar, damit Daten von Peripheriegeräten gelesen und geschrieben werden können
@@ -112,26 +112,29 @@ impl Mpu for Cpu {
                 const READ_ONLY_PRIVILEGED: u32 = 0b10 << 1;
                 READ_ONLY_PRIVILEGED
             };
-            // Da Ariel OS nur im privilegierten Modus ausgeführt wird, ist dieses Bit irrelevant
-            const EXECUTE_NEVER: u32 = 0b1;
+
+            // Ausführbarkeit der Region festlegen
+            let execute_never: u32 = !access.contains(MemoryAccess::EXECUTABLE) as u32;
 
             mpu.rbar
-                .write(start_address_truncated | shareability | access_permission | EXECUTE_NEVER);
+                .write(start_address_truncated | shareability | access_permission | execute_never);
 
             // Nur die oberen 27 Bits für die Adressierung werden verwendet.
             // Die unteren 5 Bits werden automatisch auf eins gesetzt.
             // [LIMIT=31:5|4=PXN|ATTRIndx=3:1|EN=0]
             let end_address_truncated = (*range.end() as u32) & !0b1_1111;
 
-            // Ausführbarkeit er Region festlegen
-            let privileged_execute_never = (!access.contains(MemoryAccess::EXECUTABLE) as u32) << 4;
+            // Da Ariel OS immer im privilegierten Modus ausgeführt wird, ist dieses Bit immer
+            // nicht gesetzt. Die Ausführbarkeit einer Region entscheidet sich rein über das
+            // Bit execute_never in dem Register rbar
+            const PRIVILEGED_EXECUTE_NEVER: u32 = 0b0 << 4;
             // Always zero indexed, because we do not
             let attr_indx = 0b0u32 << 1;
             let enable = 0b1u32;
 
             // Das Überwachen der Region durch die MPU aktivieren
             mpu.rlar
-                .write(end_address_truncated | privileged_execute_never | attr_indx | enable);
+                .write(end_address_truncated | PRIVILEGED_EXECUTE_NEVER | attr_indx | enable);
         };
     }
 }
