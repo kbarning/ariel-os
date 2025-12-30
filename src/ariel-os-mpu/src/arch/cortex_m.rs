@@ -14,8 +14,8 @@ impl Mpu for Cpu {
     const N_REGIONS: usize = 8; // ARM v8m supports 8 regions
 
     fn init() {
-        const FLASH_BEGIN: usize = 0x0800_0000; // FIXME hardcoded for stm32 at the moment
-        const FLASH_END: usize = 0x0807_FFFF; // 512k length according to memory.x
+        const FLASH_BEGIN: usize = 0x0800_0000;
+        const FLASH_END: usize = 0x0807_FFFF;
 
         // Flash-Region konfigurieren
         // Diese ist ausführbar und lesbar, da der Prozessor von hier aus den Binärcode läd und ausführt
