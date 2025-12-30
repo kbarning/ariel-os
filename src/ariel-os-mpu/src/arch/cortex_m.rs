@@ -5,7 +5,7 @@ use cortex_m::{self as _, Peripherals};
 
 use crate::arch::MemoryAccess;
 
-#[cfg(not(any(armv6m, armv7m, armv8m)))]
+#[cfg(not(any(armv8m)))]
 compile_error!("no supported ARM variant selected");
 
 pub struct Cpu;

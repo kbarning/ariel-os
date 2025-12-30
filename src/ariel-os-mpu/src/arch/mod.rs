@@ -3,12 +3,11 @@ bitflags::bitflags! {
         const READABLE = 0b1 << 0; // Region ist lesbar
         const WRITEABLE = 0b1 << 1; // Region ist beschreibbar
         const EXECUTABLE = 0b1 << 2; // Region ist ausführbar
-        const CACHEABLE = 0b1 << 3; // Region ist cachebar
     }
 }
 
 pub trait Mpu {
-    const N_REGIONS: usize; // Maximale Anzahl an unterstützen Regionen
+    const N_REGIONS: usize; // Maximale Anzahl der unterstützen Regionen
 
     fn init();
     fn enable();
@@ -21,7 +20,7 @@ pub trait Mpu {
 }
 
 cfg_if::cfg_if! {
-    if #[cfg(context = "cortex-m")] {
+    if #[cfg(all(any(armv8m)))] {
         mod cortex_m;
         pub use cortex_m::Cpu;
     }
@@ -29,5 +28,4 @@ cfg_if::cfg_if! {
     {
         compile_error!("Unsupported mpu");
     }
-    // TODO handle other architectures
 }
