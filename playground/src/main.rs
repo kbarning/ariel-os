@@ -7,8 +7,9 @@ use ariel_os::{mpu, thread::*};
 
 #[ariel_os::thread(autostart)]
 fn sandbox() {
+    info!("Starting sandbox thread");
     // Hier wird der C-Binärcode statisch in dem Flash-Speicher mithilfe des Übersetzers platziert
-    const C_BINARY: &[u8; 6] = include_bytes!("../../c_program/main.bin");
+    const C_BINARY: &[u8; 16] = include_bytes!("../../c_program/main.bin");
     let (stack_start, stack_end) = current_stack_limits().unwrap();
     // Stapelspeicher als les- und beschreibbar konfigurieren
     mpu::configure_stack(stack_start..=stack_end);

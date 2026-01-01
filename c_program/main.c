@@ -1,4 +1,1 @@
-void entry() {
-  unsigned int *ptr = (unsigned int *)0x2ffffff;
-  *ptr = 0xabcd;
-}
+void entry() { unsigned char svc_call_instruction[] = {0xFD, 0x00}; }
