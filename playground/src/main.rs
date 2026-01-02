@@ -2,7 +2,7 @@
 #![no_std]
 #![allow(unconditional_panic)]
 
-use ariel_os::debug::{ExitCode, exit, log::*};
+use ariel_os::debug::{ExitCode, exit, log::info};
 use ariel_os::{mpu, thread::*};
 
 #[ariel_os::thread(autostart)]
@@ -22,6 +22,7 @@ fn sandbox() {
         c_entry();
     }
     // MPU wieder ausschalten, damit Ariel-OS wieder auf globale Variablen zugreifen kann
+    // Diese werden benötigt,
     mpu::disable();
     info!("C-Binary returned successfully");
     exit(ExitCode::SUCCESS);
