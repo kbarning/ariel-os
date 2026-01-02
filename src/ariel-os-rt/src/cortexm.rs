@@ -37,9 +37,7 @@ global_asm!(
     SVCall:
         // This call is always invoked from thread mode, so we don't need to check which stack pointer was in use
         mrs r0, psp
-        bl disable_mpu
         bl {syscall}
-        bl enable_mpu
         // Go back to the thread
         // https://developer.arm.com/documentation/107706/0100/Exceptions-and-interrupts-overview/EXC-RETURN
         movw LR, #0xFFFD
