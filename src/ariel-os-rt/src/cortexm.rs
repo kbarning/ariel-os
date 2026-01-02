@@ -37,7 +37,9 @@ global_asm!(
     SVCall:
         // This call is always invoked from thread mode, so we don't need to check which stack pointer was in use
         mrs r0, psp
+        bl disable_mpu
         bl {syscall}
+        bl enable_mpu
         // Go back to the thread
         // https://developer.arm.com/documentation/107706/0100/Exceptions-and-interrupts-overview/EXC-RETURN
         movw LR, #0xFFFD
@@ -132,15 +134,12 @@ unsafe extern "C" fn memory_manage(svc_args: *const u32) {
         info!("Fault on Lazy FP State Preservation (MLSPERR)");
     }
 
-    let fault_addr = peripherals.SCB.mmfar.read();
-
-    let pc = unsafe { core::ptr::read(svc_args.offset(6)) };
-    info!(
-        "Fault Address (MMFAR): 0x{:08X}\nPC was 0x{:08X}\nSP was 0x{:08X}",
-        fault_addr,
-        pc,
-        svc_args.addr()
-    );
+    if mmfsr & (1 << 7) != 0 {
+        let fault_addr = peripherals.SCB.mmfar.read();
+        info!("Fault Address (MMFAR): 0x{:08X}", fault_addr);
+    } else {
+        info!("MMFAR not available");
+    }
 
     exit(ExitCode::FAILURE);
 }
