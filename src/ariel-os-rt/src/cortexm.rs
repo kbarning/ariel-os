@@ -83,16 +83,12 @@ unsafe extern "C" fn memory_manage(svc_args: *const u32) {
     if mmfsr & (1 << 5) != 0 {
         info!("Fault on Lazy FP State Preservation (MLSPERR)");
     }
-
-    let fault_addr = peripherals.SCB.mmfar.read();
-
-    let pc = unsafe { core::ptr::read(svc_args.offset(6)) };
-    info!(
-        "Fault Address (MMFAR): 0x{:08X}\nPC was 0x{:08X}\nSP was 0x{:08X}",
-        fault_addr,
-        pc,
-        svc_args.addr()
-    );
+    if mmfsr & (1 << 7) != 0 {
+        let fault_addr = peripherals.SCB.mmfar.read();
+        info!("Fault Address (MMFAR): 0x{:08X}", fault_addr);
+    } else {
+        info!("MMFAR not available");
+    }
 
     exit(ExitCode::FAILURE);
 }
