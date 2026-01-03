@@ -24,6 +24,18 @@ fn a() {
         "Thread a started, stack limit: 0x{:x}",
         current_stack_limits().unwrap().0
     );
+    // Wechselt zu Thread b
+    ariel_os::thread::yield_same();
+    // Wird nie erreicht werden
+    exit(ExitCode::SUCCESS);
+}
+
+#[ariel_os::thread(autostart)]
+fn b() {
+    info!(
+        "Thread b started, stack limit: 0x{:x}",
+        current_stack_limits().unwrap().0
+    );
     // Rekursion starten
     recursion();
     // Wird nie erreicht werden
