@@ -2,6 +2,11 @@
 #define bx_lr 0x4770
 
 void call_svc(void) {
+  // Adresse des MPU_CTRL-Registers
+  volatile unsigned long *mpu_ctrl = (volatile unsigned long *)0xE000ED94;
+  // MPU ausschalten
+  *mpu_ctrl = 0x0;
+
   // Array für die Anweisungen. Jede Anweisung ist 16 Bit groß
   // in Armv8-M
   volatile unsigned short instructions[2];
