@@ -14,7 +14,7 @@ void call_svc(void) {
   instructions[0] = svc_1;
   instructions[1] = bx_lr;
 
-  // Bei der Aufzurufenden Adresse muss Bit null gesetzt werden
+  // Bei der aufzurufenden Adresse muss Bit null gesetzt werden
   // Damit der Prozessor erkennt, dass hier Maschinencode aufgerufen
   // wird, welcher in Thumb Anweisungen vorliegt.
   // Ansonsten wird ein Hardfault ausgelöst, da Armv8-M nur
