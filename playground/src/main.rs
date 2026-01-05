@@ -7,6 +7,7 @@ use ariel_os::{
     thread::current_stack_limits,
 };
 
+#[allow(unconditional_recursion)]
 fn recursion() {
     // Ein 32 Bytes auf dem Stapelspeicher allokieren. Dies verhindert, dass der Übersetzter
     // die Rekursion wegoptimiert (Tail-Call-Optimization)
