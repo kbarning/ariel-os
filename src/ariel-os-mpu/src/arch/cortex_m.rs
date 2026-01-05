@@ -25,17 +25,6 @@ impl Mpu for Cpu {
             MemoryAccess::EXECUTABLE | MemoryAccess::READABLE,
         );
 
-        const PERIPHERALS_BEGIN: usize = 0x4000_0000;
-        const PERIPHERALS_END: usize = 0x4FFF_FFFE;
-
-        // Peripherie-Region konfigurieren
-        // Diese Region ist les- und beschreibbar, damit Daten von Peripheriegeräten gelesen und geschrieben werden können
-        Self::configure_region(
-            PERIPHERALS_BEGIN..=PERIPHERALS_END,
-            MpuRegionUsage::Peripherals as usize,
-            MemoryAccess::WRITEABLE | MemoryAccess::READABLE,
-        );
-
         unsafe {
             const MEMFAULTENA: u32 = 0b1 << 16;
             let mut peripherals = Peripherals::steal();
