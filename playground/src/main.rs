@@ -8,14 +8,15 @@ use ariel_os::{
 };
 
 fn recursion() {
-    // Ein 10 Bytes auf dem Stapelspeicher allokieren. Dies verhindert, dass der Übersetzter
+    // Ein 32 Bytes auf dem Stapelspeicher allokieren. Dies verhindert, dass der Übersetzter
     // die Rekursion wegoptimiert (Tail-Call-Optimization)
-    let mut arr = [0u32; 10];
+    let mut arr = [0u32; 32];
     // Verhindert, dass die Variable wegoptimiert wird
     core::hint::black_box(arr);
-    // Zugriff auf ein Element in dem Array, welches hinter der 4 Bytes Grenze liegt:
-    arr[6] = 10;
-    core::hint::black_box(arr[6]);
+    // Zugriff auf ein Element in dem Array, welches hinter der 31 Bytes Grenze liegt.
+    // Da der Stapelspeicher nach unten wächst, ist das nullte-Elemente hinter dieser Grenze
+    arr[0] = 10;
+    core::hint::black_box(arr[0]);
     // Rekursiver Aufruf
     recursion();
 }
